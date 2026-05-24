@@ -1,145 +1,170 @@
-# launcher/ui.py
-import tkinter as tk
-from tkinter import scrolledtext, ttk
-import time
+import customtkinter as ctk
+import sys
 import os
-import json
 
-from launcher.config import TITLE, GEOMETRY, CONSOLE_FONT
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from launcher.config import TITLE, GEOMETRY
 from launcher.core import BotCore
+from launcher.panels.main_panel import MainPanel
+from launcher.panels.commands_panel import CommandsPanel
+from launcher.panels.maintenance_panel import MaintenancePanel
 
 
-class RetroLauncherUI:
+class RetroLauncherUI(ctk.CTk):
     def __init__(self):
-        self.root = tk.Tk()
-        self.root.title(TITLE)
-        self.root.geometry(GEOMETRY)
-        self.root.configure(bg="#0f0f1a")
-        self.root.resizable(False, False)
+        super().__init__()
+
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("dark-blue")
+
+        self.title(TITLE)
+        self.geometry(GEOMETRY)
+        self.resizable(False, False)
 
         self.core = BotCore()
         self.full_maintenance_mode = False
+        self.current_panel = None
+        self.panels = {}
+        self.path_label = None
 
-        self.setup_styles()
         self.setup_ui()
 
-    def setup_styles(self):
-        style = ttk.Style()
-        style.theme_use('clam')
-        
-        style.configure("TButton", font=("Segoe UI", 10, "bold"), padding=8)
-        style.configure("Accent.TButton", background="#ff00ff", foreground="white")
-
     def setup_ui(self):
-        # Главный контейнер
-        main_frame = tk.Frame(self.root, bg="#0f0f1a")
-        main_frame.pack(fill="both", expand=True)
+        # Основная сетка окна
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
 
-        # === Сайдбар ===
-        sidebar = tk.Frame(main_frame, bg="#151521", width=220)
-        sidebar.pack(side="left", fill="y")
-        sidebar.pack_propagate(False)
+        # ====================== ВЕРХНЯЯ СТРОКА ПУТИ ======================
+        path_frame = ctk.CTkFrame(self, fg_color="#111118", height=60)
+        path_frame.grid(row=0, column=0, sticky="ew", padx=14, pady=(14, 0))
+        path_frame.pack_propagate(False)
 
-        tk.Label(sidebar, text="MAFANYA 3.0", font=("Segoe UI", 20, "bold"), 
-                fg="#ff00ff", bg="#151521").pack(pady=20)
+        ctk.CTkLabel(path_frame, text="MAFANYA 3.0", 
+                    font=ctk.CTkFont(family="Consolas", size=18, weight="bold"),
+                    text_color="#ff00ff").pack(side="left", padx=20)
 
-        # Навигация
-        nav_items = [
-            ("🌐 Главная", self.show_main),
-            ("🔧 Техрежим", self.show_maintenance),
-            ("📊 Статистика", lambda: self.log("Статистика пока в разработке")),
-            ("🔄 Управление", self.show_main),
-            ("⚙️ Настройки", lambda: self.log("Настройки в разработке")),
+        ctk.CTkLabel(path_frame, text="→", 
+                    font=ctk.CTkFont(size=24), 
+                    text_color="#666666").pack(side="left", padx=8)
+
+        self.path_label = ctk.CTkLabel(path_frame, text="main", 
+                    font=ctk.CTkFont(family="Consolas", size=18, weight="bold"),
+                    text_color="#00ffff")
+        self.path_label.pack(side="left", padx=8)
+
+        # ====================== ОСНОВНОЙ БЛОК ======================
+        main_block = ctk.CTkFrame(self, fg_color="#0a0a0f", corner_radius=12)
+        main_block.grid(row=1, column=0, sticky="nsew", padx=14, pady=(10, 14))
+
+        main_block.grid_columnconfigure(0, weight=0)   # Навигация
+        main_block.grid_columnconfigure(1, weight=1)   # Контент
+        main_block.grid_rowconfigure(0, weight=1)
+
+        # --- Левая панель: Навигация ---
+        self.sidebar = ctk.CTkFrame(main_block, width=290, fg_color="#111118", corner_radius=10)
+        self.sidebar.grid(row=0, column=0, sticky="nsw", padx=(12, 8), pady=12)
+        self.sidebar.pack_propagate(False)
+
+        ctk.CTkLabel(self.sidebar, text="📁 РАЗДЕЛЫ", 
+                    font=ctk.CTkFont(size=15, weight="bold"), 
+                    text_color="#00ffcc").pack(pady=(20, 12), anchor="w", padx=20)
+
+        nav = [
+            ("🌐 Главная", "main"),
+            ("📜 Команды", "commands"),
+            ("🔧 Техрежим", "maintenance"),
+            ("📊 Статистика", "stats"),
+            ("⚙️ Настройки", "settings"),
         ]
 
-        for text, cmd in nav_items:
-            btn = tk.Button(sidebar, text=text, bg="#1f1f2e", fg="#cccccc", 
-                          activebackground="#ff00ff", activeforeground="white",
-                          font=("Segoe UI", 11), relief="flat", anchor="w", padx=20)
-            btn.config(command=cmd)
-            btn.pack(fill="x", pady=2, padx=10)
+        for text, key in nav:
+            btn = ctk.CTkButton(self.sidebar, text=text, height=50,
+                              fg_color="#1a1a2e",
+                              hover_color="#2a2a44",
+                              text_color="#e0e0ff",
+                              anchor="w",
+                              corner_radius=8,
+                              font=ctk.CTkFont(family="Consolas", size=14))  # ← исправлено
+            btn.configure(command=lambda k=key: self.switch_panel(k))
+            btn.pack(pady=5, padx=16, fill="x")
 
-        # === Основная область ===
-        self.content_frame = tk.Frame(main_frame, bg="#0f0f1a")
-        self.content_frame.pack(side="right", fill="both", expand=True)
+        # --- Правая область: Контент ---
+        self.content_frame = ctk.CTkFrame(main_block, fg_color="#0a0a12", corner_radius=10)
+        self.content_frame.grid(row=0, column=1, sticky="nsew", padx=(8, 12), pady=12)
 
-        self.show_main()  # Показываем главную по умолчанию
+        # Создаём панели
+        self.panels["main"] = MainPanel(self.content_frame, self)
+        self.panels["commands"] = CommandsPanel(self.content_frame, self)
+        self.panels["maintenance"] = MaintenancePanel(self.content_frame, self)
 
-    def show_main(self):
-        for widget in self.content_frame.winfo_children():
-            widget.destroy()
+        self.switch_panel("main")
 
-        # Header
-        header = tk.Label(self.content_frame, text="ПАНЕЛЬ УПРАВЛЕНИЯ", 
-                         font=("Segoe UI", 24, "bold"), fg="#ff00ff", bg="#0f0f1a")
-        header.pack(pady=20)
+    def switch_panel(self, panel_name: str):
+        if self.current_panel:
+            self.current_panel.pack_forget()
 
-        # Статус бота
-        status_frame = tk.Frame(self.content_frame, bg="#1a1a2e", height=120)
-        status_frame.pack(fill="x", padx=30, pady=10)
-        status_frame.pack_propagate(False)
+        panel = self.panels.get(panel_name)
 
-        self.status_label = tk.Label(status_frame, text="OFFLINE", 
-                                    font=("Segoe UI", 28, "bold"), fg="#ff3333", bg="#1a1a2e")
-        self.status_label.pack(pady=30)
+        if panel:
+            panel.pack(fill="both", expand=True)
+            self.current_panel = panel
+        else:
+            placeholder = ctk.CTkFrame(self.content_frame, fg_color="#0a0a12")
+            placeholder.pack(fill="both", expand=True)
+            ctk.CTkLabel(placeholder, text=panel_name.upper(), 
+                        font=ctk.CTkFont(size=32, weight="bold"), 
+                        text_color="#ff00ff").pack(pady=100)
+            ctk.CTkLabel(placeholder, text="Раздел находится в разработке", 
+                        font=ctk.CTkFont(size=16), 
+                        text_color="#8888ff").pack()
+            self.current_panel = placeholder
 
-        # Кнопки управления
-        btn_frame = tk.Frame(self.content_frame, bg="#0f0f1a")
-        btn_frame.pack(pady=20)
+        # Обновляем путь сверху
+        display = {"main": "main", "commands": "commands", 
+                  "maintenance": "maintenance", "stats": "stats", 
+                  "settings": "settings"}.get(panel_name, panel_name)
+        self.path_label.configure(text=display)
 
-        self.start_btn = tk.Button(btn_frame, text="▶ ЗАПУСТИТЬ БОТА", width=25, height=3,
-                                  font=("Segoe UI", 14, "bold"), bg="#00ff88", fg="black",
-                                  command=self.toggle_bot)
-        self.start_btn.grid(row=0, column=0, padx=15)
+        self.log_to_current_panel(f"Открыта панель: {panel_name}", "UI")
 
-        self.tech_btn = tk.Button(btn_frame, text="🚨 ТЕХРЕЖИМ OFF", width=25, height=3,
-                                 font=("Segoe UI", 14, "bold"), bg="#444466", fg="#ffff00",
-                                 command=self.toggle_maintenance)
-        self.tech_btn.grid(row=0, column=1, padx=15)
-
-        # Логи
-        log_frame = tk.LabelFrame(self.content_frame, text=" ЛОГИ ", fg="#8888ff", bg="#0f0f1a")
-        log_frame.pack(fill="both", expand=True, padx=30, pady=15)
-
-        self.console = scrolledtext.ScrolledText(log_frame, font=CONSOLE_FONT,
-                                                 bg="#0a0a12", fg="#00ffcc", height=18)
-        self.console.pack(fill="both", expand=True, padx=10, pady=10)
-
-        self.log("MAFANYA 3.0 — Современная панель управления загружена", "SYSTEM")
-
-    def show_maintenance(self):
-        # Можно сделать отдельную вкладку с подробным техрежимом позже
-        self.log("Открыта панель техрежима", "INFO")
-
-    def log(self, message: str, prefix="INFO"):
-        ts = time.strftime("%H:%M:%S")
-        color = "#00ffcc"
-        self.console.insert(tk.END, f"[{ts}] [{prefix}] {message}\n")
-        self.console.see(tk.END)
-
+    # ====================== ОБЩИЕ МЕТОДЫ ======================
     def toggle_bot(self):
         if not self.core.is_running:
             success, msg = self.core.start_bot()
             if success:
-                self.start_btn.config(text="■ ОСТАНОВИТЬ БОТА", bg="#ff3366", fg="white")
-                self.status_label.config(text="ONLINE", fg="#00ff88")
-            self.log(msg, "SUCCESS" if success else "ERROR")
+                self.update_start_button(True)
+            self.log_to_current_panel(msg, "SUCCESS" if success else "ERROR")
         else:
             success, msg = self.core.stop_bot()
             if success:
-                self.start_btn.config(text="▶ ЗАПУСТИТЬ БОТА", bg="#00ff88", fg="black")
-                self.status_label.config(text="OFFLINE", fg="#ff3333")
-            self.log(msg, "SYSTEM")
+                self.update_start_button(False)
+            self.log_to_current_panel(msg, "SYSTEM")
+
+    def update_start_button(self, running: bool):
+        try:
+            main_panel = self.panels.get("main")
+            if main_panel and hasattr(main_panel, 'start_btn'):
+                if running:
+                    main_panel.start_btn.configure(text="■ ОСТАНОВИТЬ БОТА", fg_color="#ff3366")
+                    main_panel.status_label.configure(text="ONLINE", text_color="#00ff88")
+                else:
+                    main_panel.start_btn.configure(text="▶ ЗАПУСТИТЬ БОТА", fg_color="#00ff88")
+                    main_panel.status_label.configure(text="OFFLINE", text_color="#ff4444")
+        except:
+            pass
 
     def toggle_maintenance(self):
         self.full_maintenance_mode = not self.full_maintenance_mode
+        status = "🚨 ПОЛНЫЙ ТЕХРЕЖИМ ВКЛЮЧЁН" if self.full_maintenance_mode else "🟢 ТЕХРЕЖИМ ВЫКЛЮЧЕН"
+        self.log_to_current_panel(status, "CRITICAL" if self.full_maintenance_mode else "SYSTEM")
 
-        if self.full_maintenance_mode:
-            self.tech_btn.config(text="🚨 ТЕХРЕЖИМ ON", bg="#ff0066", fg="white")
-            self.log("ПОЛНЫЙ ТЕХРЕЖИМ ВКЛЮЧЁН", "CRITICAL")
-        else:
-            self.tech_btn.config(text="🚨 ТЕХРЕЖИМ OFF", bg="#444466", fg="#ffff00")
-            self.log("ТЕХРЕЖИМ ВЫКЛЮЧЕН", "SYSTEM")
+    def log_to_current_panel(self, message: str, prefix="INFO"):
+        try:
+            if hasattr(self.current_panel, 'log'):
+                self.current_panel.log(message, prefix)
+        except:
+            pass
 
     def run(self):
-        self.root.mainloop()
+        self.mainloop()

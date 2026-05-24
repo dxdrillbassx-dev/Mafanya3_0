@@ -49,6 +49,11 @@ bot.py
 │   ├── ui.py
 │   ├── core.py
 │   └── config.py
+│   └── panels/
+│       ├── __init__.py
+│       ├── commands_panel.py
+│       ├── main_panel.py
+│       └── maintenance_panel.py
 └── backgrounds/
 └── (*.jpg, *.png файлы)
 └── Mafanya.bat
