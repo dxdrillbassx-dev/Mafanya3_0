@@ -18,6 +18,12 @@ class RetroLauncherUI(ctk.CTk):
         ctk.set_appearance_mode("dark")
         ctk.set_default_color_theme("dark-blue")
 
+        # === ПИКСЕЛЬНЫЙ RETRO ШРИФТ ===
+        self.pixel_font = ctk.CTkFont(family="Consolas", size=14, weight="bold")
+        self.pixel_font_small = ctk.CTkFont(family="Consolas", size=12, weight="bold")
+        self.pixel_font_big = ctk.CTkFont(family="Consolas", size=20, weight="bold")
+        self.pixel_font_title = ctk.CTkFont(family="Consolas", size=24, weight="bold")
+
         self.title(TITLE)
         self.geometry(GEOMETRY)
         self.resizable(False, False)
@@ -31,25 +37,24 @@ class RetroLauncherUI(ctk.CTk):
         self.setup_ui()
 
     def setup_ui(self):
-        # Основная сетка окна
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
 
-        # ====================== ВЕРХНЯЯ СТРОКА ПУТИ ======================
-        path_frame = ctk.CTkFrame(self, fg_color="#111118", height=60)
+        # ====================== ВЕРХНИЙ ПУТЬ ======================
+        path_frame = ctk.CTkFrame(self, fg_color="#111118", height=64)
         path_frame.grid(row=0, column=0, sticky="ew", padx=14, pady=(14, 0))
         path_frame.pack_propagate(False)
 
         ctk.CTkLabel(path_frame, text="MAFANYA 3.0", 
-                    font=ctk.CTkFont(family="Consolas", size=18, weight="bold"),
-                    text_color="#ff00ff").pack(side="left", padx=20)
+                    font=self.pixel_font_title,
+                    text_color="#ff00ff").pack(side="left", padx=22)
 
         ctk.CTkLabel(path_frame, text="→", 
-                    font=ctk.CTkFont(size=24), 
-                    text_color="#666666").pack(side="left", padx=8)
+                    font=ctk.CTkFont(family="Consolas", size=28), 
+                    text_color="#555555").pack(side="left", padx=8)
 
         self.path_label = ctk.CTkLabel(path_frame, text="main", 
-                    font=ctk.CTkFont(family="Consolas", size=18, weight="bold"),
+                    font=self.pixel_font_title,
                     text_color="#00ffff")
         self.path_label.pack(side="left", padx=8)
 
@@ -57,17 +62,20 @@ class RetroLauncherUI(ctk.CTk):
         main_block = ctk.CTkFrame(self, fg_color="#0a0a0f", corner_radius=12)
         main_block.grid(row=1, column=0, sticky="nsew", padx=14, pady=(10, 14))
 
-        main_block.grid_columnconfigure(0, weight=0)   # Навигация
-        main_block.grid_columnconfigure(1, weight=1)   # Контент
+        main_block.grid_columnconfigure(0, weight=0)
+        main_block.grid_columnconfigure(1, weight=1)
         main_block.grid_rowconfigure(0, weight=1)
 
-        # --- Левая панель: Навигация ---
-        self.sidebar = ctk.CTkFrame(main_block, width=290, fg_color="#111118", corner_radius=10)
-        self.sidebar.grid(row=0, column=0, sticky="nsw", padx=(12, 8), pady=12)
-        self.sidebar.pack_propagate(False)
+        # Левая колонка
+        left_column = ctk.CTkFrame(main_block, fg_color="transparent", width=290)
+        left_column.grid(row=0, column=0, sticky="nsew", padx=(12, 8), pady=12)
+
+        # Навигатор
+        self.sidebar = ctk.CTkFrame(left_column, fg_color="#111118", corner_radius=10)
+        self.sidebar.pack(fill="both", expand=True, pady=(0, 8))
 
         ctk.CTkLabel(self.sidebar, text="📁 РАЗДЕЛЫ", 
-                    font=ctk.CTkFont(size=15, weight="bold"), 
+                    font=self.pixel_font_big,
                     text_color="#00ffcc").pack(pady=(20, 12), anchor="w", padx=20)
 
         nav = [
@@ -85,15 +93,27 @@ class RetroLauncherUI(ctk.CTk):
                               text_color="#e0e0ff",
                               anchor="w",
                               corner_radius=8,
-                              font=ctk.CTkFont(family="Consolas", size=14))  # ← исправлено
+                              font=self.pixel_font)
             btn.configure(command=lambda k=key: self.switch_panel(k))
-            btn.pack(pady=5, padx=16, fill="x")
+            btn.pack(pady=6, padx=16, fill="x")
 
-        # --- Правая область: Контент ---
+        # Инфо блок внизу
+        info_frame = ctk.CTkFrame(left_column, fg_color="#111118", height=68, corner_radius=10)
+        info_frame.pack(fill="x", side="bottom", pady=(8, 0))
+        info_frame.pack_propagate(False)
+
+        ctk.CTkLabel(info_frame, text="v3.0", 
+                    font=self.pixel_font,
+                    text_color="#00ffff").pack(pady=(12, 1))
+
+        ctk.CTkLabel(info_frame, text="by dxdrillbassx", 
+                    font=self.pixel_font_small,
+                    text_color="#8888ff").pack(pady=(0, 10))
+
+        # ====================== КОНТЕНТ ======================
         self.content_frame = ctk.CTkFrame(main_block, fg_color="#0a0a12", corner_radius=10)
         self.content_frame.grid(row=0, column=1, sticky="nsew", padx=(8, 12), pady=12)
 
-        # Создаём панели
         self.panels["main"] = MainPanel(self.content_frame, self)
         self.panels["commands"] = CommandsPanel(self.content_frame, self)
         self.panels["maintenance"] = MaintenancePanel(self.content_frame, self)
@@ -113,14 +133,13 @@ class RetroLauncherUI(ctk.CTk):
             placeholder = ctk.CTkFrame(self.content_frame, fg_color="#0a0a12")
             placeholder.pack(fill="both", expand=True)
             ctk.CTkLabel(placeholder, text=panel_name.upper(), 
-                        font=ctk.CTkFont(size=32, weight="bold"), 
-                        text_color="#ff00ff").pack(pady=100)
+                        font=self.pixel_font_title, 
+                        text_color="#ff00ff").pack(pady=120)
             ctk.CTkLabel(placeholder, text="Раздел находится в разработке", 
-                        font=ctk.CTkFont(size=16), 
+                        font=self.pixel_font, 
                         text_color="#8888ff").pack()
             self.current_panel = placeholder
 
-        # Обновляем путь сверху
         display = {"main": "main", "commands": "commands", 
                   "maintenance": "maintenance", "stats": "stats", 
                   "settings": "settings"}.get(panel_name, panel_name)

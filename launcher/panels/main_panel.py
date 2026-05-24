@@ -1,4 +1,3 @@
-# launcher/panels/main_panel.py
 import customtkinter as ctk
 import time
 
@@ -10,55 +9,55 @@ class MainPanel(ctk.CTkFrame):
         self.setup()
 
     def setup(self):
-        # Заголовок
-        title = ctk.CTkLabel(self, text="ПАНЕЛЬ УПРАВЛЕНИЯ", 
-                            font=ctk.CTkFont(size=32, weight="bold"), 
-                            text_color="#ff00ff")
-        title.pack(pady=25)
+        main_content = ctk.CTkFrame(self, fg_color="transparent")
+        main_content.pack(fill="both", expand=True, padx=15, pady=15)
 
-        # Статус блок
-        status_frame = ctk.CTkFrame(self, fg_color="#1a1a2e", height=160, corner_radius=12)
-        status_frame.pack(fill="x", padx=40, pady=20)
-        status_frame.pack_propagate(False)
+        # ====================== ЛЕВАЯ КОЛОНКА — УПРАВЛЕНИЕ ======================
+        control_frame = ctk.CTkFrame(main_content, fg_color="#111118", width=340, corner_radius=12)
+        control_frame.pack(side="left", fill="y", padx=(0, 15))
+        control_frame.pack_propagate(False)
 
-        self.status_label = ctk.CTkLabel(status_frame, text="OFFLINE", 
+        ctk.CTkLabel(control_frame, text="📊 ПАНЕЛЬ УПРАВЛЕНИЯ", 
+                    font=ctk.CTkFont(size=16, weight="bold"), 
+                    text_color="#00ffcc").pack(pady=(30, 20), anchor="w", padx=25)
+
+        # Большой статус
+        self.status_frame = ctk.CTkFrame(control_frame, fg_color="#1a1a2e", height=160, corner_radius=12)
+        self.status_frame.pack(fill="x", padx=25, pady=10)
+        self.status_frame.pack_propagate(False)
+
+        self.status_label = ctk.CTkLabel(self.status_frame, text="OFFLINE", 
                                         font=ctk.CTkFont(size=42, weight="bold"),
                                         text_color="#ff4444")
-        self.status_label.pack(expand=True, pady=40)
+        self.status_label.pack(expand=True)
 
-        # Кнопки
-        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
-        btn_frame.pack(pady=20)
+        # Кнопка запуска / остановки
+        self.toggle_btn = ctk.CTkButton(control_frame, 
+                                       text="▶ ЗАПУСТИТЬ БОТА", 
+                                       width=280, height=65, 
+                                       corner_radius=12,
+                                       font=ctk.CTkFont(size=17, weight="bold"),
+                                       fg_color="#00ff88", 
+                                       text_color="black",
+                                       hover_color="#00cc6a",
+                                       command=self.ui.toggle_bot)
+        self.toggle_btn.pack(pady=25)
 
-        self.start_btn = ctk.CTkButton(btn_frame, text="▶ ЗАПУСТИТЬ БОТА", 
-                                      width=280, height=60, corner_radius=12,
-                                      font=ctk.CTkFont(size=16, weight="bold"),
-                                      fg_color="#00ff88", text_color="black",
-                                      hover_color="#00cc6a",
-                                      command=self.ui.toggle_bot)
-        self.start_btn.pack(side="left", padx=20)
+        # ====================== ПРАВАЯ КОЛОНКА — ЛОГИ ======================
+        log_frame = ctk.CTkFrame(main_content, fg_color="#111118", corner_radius=12)
+        log_frame.pack(side="right", fill="both", expand=True)
 
-        self.tech_btn = ctk.CTkButton(btn_frame, text="🚨 ТЕХРЕЖИМ OFF", 
-                                     width=280, height=60, corner_radius=12,
-                                     font=ctk.CTkFont(size=16, weight="bold"),
-                                     fg_color="#444466", text_color="#ffff00",
-                                     hover_color="#666688",
-                                     command=self.ui.toggle_maintenance)
-        self.tech_btn.pack(side="left", padx=20)
-
-        # Логи
-        log_frame = ctk.CTkFrame(self, fg_color="#111118")
-        log_frame.pack(fill="both", expand=True, padx=40, pady=20)
-
-        log_label = ctk.CTkLabel(log_frame, text="ЛОГИ", 
+        log_label = ctk.CTkLabel(log_frame, text="📜 СИСТЕМНЫЕ ЛОГИ", 
                                 font=ctk.CTkFont(size=16, weight="bold"), 
                                 text_color="#7777ff")
-        log_label.pack(pady=(15, 5))
+        log_label.pack(pady=(18, 8), anchor="w", padx=25)
 
-        self.console = ctk.CTkTextbox(log_frame, font=ctk.CTkFont(family="Consolas", size=11),
-                                     fg_color="#050508", text_color="#00ffcc", 
+        self.console = ctk.CTkTextbox(log_frame, 
+                                     font=ctk.CTkFont(family="Consolas", size=12),
+                                     fg_color="#050508", 
+                                     text_color="#00ffcc", 
                                      scrollbar_button_color="#ff00ff")
-        self.console.pack(fill="both", expand=True, padx=15, pady=(0, 15))
+        self.console.pack(fill="both", expand=True, padx=25, pady=(0, 25))
 
         self.log("Главная панель загружена", "SYSTEM")
 
