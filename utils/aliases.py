@@ -10,6 +10,7 @@ COMMAND_ALIASES = {
     "myid": ["мойid", "мойид"],
     "show_aliases": ["алиасы", "aliases", "allaliases"],
     "botstat": ["стат", "стата", "статистика", "status"],
+    "tech": ["тех", "обслуживание", "maintenance", "техрежим"],
 
     # ====================== FORZA ======================
     "forza_status": ["forza", "форза", "форца"],

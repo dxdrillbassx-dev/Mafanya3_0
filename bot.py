@@ -18,7 +18,6 @@ OWNER_ID = int(os.getenv('OWNER_ID', 0))
 ROLE_ID = int(os.getenv('ROLE_ID', 0))
 LOG_CHANNEL_ID = int(os.getenv('LOG_CHANNEL_ID', 0))
 WELCOME_CHANNEL_ID = int(os.getenv('WELCOME_CHANNEL_ID', LOG_CHANNEL_ID))
-STATUS_CHANNEL_ID = int(os.getenv('STATUS_CHANNEL_ID', 0))
 
 # AI Ключи
 XAI_API_KEY = os.getenv('XAI_API_KEY')
@@ -35,7 +34,14 @@ intents.members = True
 intents.voice_states = True
 
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
-last_status_change = None
+
+
+# ====================== ФИКС КОДИРОВКИ ДЛЯ WINDOWS ======================
+if os.name == 'nt':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    except:
+        pass
 
 
 def get_env_status_text() -> str:
@@ -46,7 +52,6 @@ def get_env_status_text() -> str:
         "ROLE_ID": ROLE_ID != 0,
         "LOG_CHANNEL_ID": LOG_CHANNEL_ID != 0,
         "WELCOME_CHANNEL_ID": WELCOME_CHANNEL_ID != 0,
-        "STATUS_CHANNEL_ID": STATUS_CHANNEL_ID != 0,
         "XAI_API_KEY": bool(XAI_API_KEY and XAI_API_KEY.startswith('xai-')),
         "GEMINI_API_KEY": bool(GEMINI_API_KEY and GEMINI_API_KEY.startswith('AIza')),
         "PINTEREST_EMAIL": bool(PINTEREST_EMAIL),
@@ -71,45 +76,11 @@ async def send_log(message: str):
             pass
 
 
-# ==================== STATUS CHANNEL ====================
-async def set_bot_status(online: bool):
-    """Меняет название канала с максимальной защитой от rate limit"""
-    if not STATUS_CHANNEL_ID:
-        return
-    
-    channel = bot.get_channel(STATUS_CHANNEL_ID)
-    if not channel:
-        return
-
-    try:
-        new_name = "🟢 Mafanya 3.0" if online else "🔴 Mafanya 3.0"
-        
-        if channel.name == new_name:
-            print(f"Статус уже {new_name} — пропускаем")
-            return
-
-        await channel.edit(name=new_name)
-        await send_log(f"📛 Статус канала изменён → **{new_name}**")
-        print(f"✅ Статус успешно изменён на: {new_name}")
-
-    except discord.HTTPException as e:
-        if e.status == 429:                    # Rate Limit
-            retry_after = getattr(e, 'retry_after', 120)
-            print(f"⚠️ RATE LIMIT! Пропускаем смену названия канала (ждать {retry_after:.0f} сек)")
-            await send_log(f"⚠️ Rate Limit при смене статуса. Изменение пропущено.")
-            # Никаких await sleep — сразу выходим
-        else:
-            print(f"❌ HTTP ошибка при смене названия: {e.status} {e.text}")
-    except Exception as e:
-        print(f"❌ Неизвестная ошибка при смене статуса канала: {e}")
-
-
 # ==================== GRACEFUL SHUTDOWN ====================
 async def graceful_shutdown():
-    """Корректное выключение бота с изменением статуса"""
-    print("\n🔴 Получен сигнал завершения. Меняю статус канала на красный...")
-    await set_bot_status(online=False)
-    await asyncio.sleep(1.5)  # даём время на изменение названия
+    """Корректное выключение бота"""
+    print("\n🔴 Получен сигнал завершения. Завершаем работу...")
+    await asyncio.sleep(1)
     
     try:
         await bot.close()
@@ -119,13 +90,12 @@ async def graceful_shutdown():
 
 
 def handle_signal(sig, frame):
-    """Обработчик Ctrl+C и других сигналов"""
     print(f"\n⚠️  Получен сигнал {sig}. Запускаю graceful shutdown...")
     asyncio.create_task(graceful_shutdown())
 
 
 # Регистрируем обработчики сигналов
-signal.signal(signal.SIGINT, handle_signal)   # Ctrl + C
+signal.signal(signal.SIGINT, handle_signal)
 if sys.platform != "win32":
     signal.signal(signal.SIGTERM, handle_signal)
 
@@ -139,14 +109,6 @@ async def on_ready():
     print("="*65)
 
     check_env_variables()
-
-    # ====================== СТАТУС КАНАЛА ======================
-    try:
-        await asyncio.wait_for(set_bot_status(online=True), timeout=8.0)  # максимум 8 секунд
-    except asyncio.TimeoutError:
-        print("⏳ Смена статуса канала превысила лимит времени — пропущено")
-    except Exception as e:
-        print(f"❌ Ошибка смены статуса: {e}")
 
     # ====================== ЗАГРУЗКА МОДУЛЕЙ ======================
     print("\n🔄 Загрузка модулей...")
@@ -172,7 +134,7 @@ async def on_ready():
     print(f"\n🎉 Загрузка модулей завершена!")
     print(f"   ✅ Успешно: {len(successful)}/{total}")
 
-    # ====================== EMBED + ИНТЕРАКТИВНЫЙ DROPDOWN ======================
+    # ====================== EMBED + DROPDOWN ======================
     embed = discord.Embed(
         title="✅ Бот успешно запущен",
         description=f"**{bot.user}** | Серверов: **{len(bot.guilds)}**",
@@ -181,7 +143,6 @@ async def on_ready():
     )
     embed.set_thumbnail(url=bot.user.display_avatar.url)
 
-    # Левая колонка — список модулей
     if successful:
         modules_list = "\n".join([f"`• {m}`" for m in sorted(successful)])
         embed.add_field(
@@ -190,7 +151,6 @@ async def on_ready():
             inline=True
         )
 
-    # Правая колонка — .env
     env_text = get_env_status_text()
     embed.add_field(
         name="🔑 Проверка .env", 
@@ -207,14 +167,13 @@ async def on_ready():
 
     embed.set_footer(text="Нажми на выпадающий список ниже, чтобы посмотреть описание модуля")
 
-    # ==================== DROPDOWN С ОПИСАНИЯМИ ====================
+    # Dropdown
     class ModuleSelect(discord.ui.View):
         def __init__(self):
-            super().__init__(timeout=300)  # активно 5 минут
+            super().__init__(timeout=300)
 
             options = []
             for mod in sorted(successful):
-                # Берём описание из словаря, если нет — стандартный текст
                 desc = MODULE_DESCRIPTIONS.get(mod, MODULE_DESCRIPTIONS.get(mod.split('.')[-1], "Описание модуля пока отсутствует."))
                 options.append(discord.SelectOption(
                     label=mod,
@@ -238,27 +197,24 @@ async def on_ready():
             
             await interaction.response.send_message(
                 f"**📄 Модуль:** `{module_name}`\n\n{desc}",
-                ephemeral=True  # видно только тому, кто нажал
+                ephemeral=True
             )
 
-    # Отправка эмбеда с выпадающим списком
     log_channel = bot.get_channel(LOG_CHANNEL_ID)
     if log_channel:
         try:
             view = ModuleSelect()
             await log_channel.send(embed=embed, view=view)
         except Exception as e:
-            print(f"❌ Не удалось отправить embed с dropdown: {e}")
-            # fallback без dropdown
+            print(f"❌ Не удалось отправить embed: {e}")
             await log_channel.send(embed=embed)
 
     print("\n" + "="*65)
-    print("🚀 Mafanya 3.0 полностью готова к работе!")
+    print("Mafanya 3.0 полностью готова к работе!")
     print("="*65)
 
 
 def check_env_variables():
-    """Вывод в консоль"""
     print("\n🔑 Проверка переменных окружения (.env):")
     print("-" * 55)
     
@@ -268,7 +224,6 @@ def check_env_variables():
         "ROLE_ID": ROLE_ID != 0,
         "LOG_CHANNEL_ID": LOG_CHANNEL_ID != 0,
         "WELCOME_CHANNEL_ID": WELCOME_CHANNEL_ID != 0,
-        "STATUS_CHANNEL_ID": STATUS_CHANNEL_ID != 0,
         "XAI_API_KEY": bool(XAI_API_KEY and XAI_API_KEY.startswith('xai-')),
         "GEMINI_API_KEY": bool(GEMINI_API_KEY and GEMINI_API_KEY.startswith('AIza')),
         "PINTEREST_EMAIL": bool(PINTEREST_EMAIL),
@@ -361,5 +316,5 @@ async def on_command_error(ctx, error):
 
 
 # ==================== ЗАПУСК БОТА ====================
-print("🚀 Запуск бота Mafanya 3.0...")
+print("[*] Запуск бота Mafanya 3.0...")
 bot.run(TOKEN)

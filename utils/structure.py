@@ -19,6 +19,7 @@ bot.py
 │   ├── gemini.py
 │   ├── helpimage.py
 │   ├── customrole.py
+│   ├── maintenance.py
 │   ├── moderation.py
 │   ├── forza.py
 │   ├── fun.py
@@ -42,6 +43,13 @@ bot.py
 │   ├── custom_roles.json
 │   ├── forza_cars.json
 │   └── pinterest_history.json
+├── launcher/
+│   ├── __init__.py
+│   ├── main.py
+│   ├── ui.py
+│   ├── core.py
+│   └── config.py
 └── backgrounds/
 └── (*.jpg, *.png файлы)
+└── Mafanya.bat
 """
