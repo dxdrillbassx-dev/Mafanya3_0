@@ -129,6 +129,57 @@ async def is_command_enabled(ctx):
         return False
     return True
 
+# ====================== ПРОВЕРКА ПРАВ БОТА ======================
+async def check_bot_permissions():
+    """Проверяет права бота на всех серверах"""
+    if not bot.guilds:
+        print("⚠️ Бот не состоит ни в одном сервере")
+        return
+
+    print("\n🔐 Проверка прав бота на серверах...")
+    print("-" * 60)
+
+    missing_permissions = {}
+
+    for guild in bot.guilds:
+        me = guild.me
+        if not me:
+            continue
+
+        perms = me.guild_permissions
+        missing = []
+
+        important_perms = {
+            "administrator": "Администратор",
+            "manage_guild": "Управление сервером",
+            "manage_roles": "Управление ролями",
+            "manage_channels": "Управление каналами",
+            "kick_members": "Кикать участников",
+            "ban_members": "Банить участников",
+            "manage_messages": "Управление сообщениями",
+            "read_message_history": "Читать историю сообщений",
+            "send_messages": "Отправлять сообщения",
+            "embed_links": "Встраивать ссылки",
+            "attach_files": "Прикреплять файлы",
+            "connect": "Подключаться к голосовым каналам",
+        }
+
+        for perm, name in important_perms.items():
+            if not getattr(perms, perm, False):
+                missing.append(name)
+
+        if missing:
+            missing_permissions[guild.name] = missing
+            print(f"⚠️  {guild.name} — не хватает прав: {', '.join(missing)}")
+        else:
+            print(f"✅ {guild.name} — все важные права есть")
+
+    if missing_permissions:
+        print(f"\n⚠️  ВНИМАНИЕ! Боту не хватает прав на {len(missing_permissions)} серверах!")
+    else:
+        print("\n🎉 Бот имеет все важные права на всех серверах!")
+
+    print("-" * 60)
 
 @bot.event
 async def on_ready():
@@ -163,6 +214,11 @@ async def on_ready():
     total = len(successful) + len(failed)
     print(f"\n🎉 Загрузка модулей завершена!")
     print(f"   ✅ Успешно: {len(successful)}/{total}")
+    print(f"✅ Бот готов! Серверов: {len(bot.guilds)}")
+    await send_log(f"Бот готов. Находится на {len(bot.guilds)} серверах.")
+
+    # ====================== ПРОВЕРКА ПРАВ БОТА ======================
+    await check_bot_permissions()
 
     # ====================== EMBED + DROPDOWN ======================
     embed = discord.Embed(
@@ -344,8 +400,16 @@ async def on_command_error(ctx, error):
     else:
         print(f"Command error: {error}")
 
-
 # ==================== ЗАПУСК БОТА ====================
 print("[*] Запуск бота Mafanya 3.0...")
-load_disabled_commands()  # Загружаем отключённые команды перед запуском
+load_disabled_commands()
+
+# ====================== ПОДКЛЮЧЕНИЕ К ЛАУНЧЕРУ ======================
+try:
+    import launcher.shared as shared
+    shared.bot_instance = bot
+    print("✅ Бот успешно передан в shared модуль лаунчера")
+except Exception as e:
+    print(f"⚠️ Не удалось сохранить bot в shared: {e}")
+
 bot.run(TOKEN)

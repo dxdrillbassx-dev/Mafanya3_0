@@ -49,12 +49,17 @@ Mafanya 3.0 — Структура проекта
 │   ├── 📜 main.py
 │   ├── 📜 ui.py
 │   ├── 📜 core.py
+│   ├── 📜 shared.py
 │   └── 📜 config.py
 │   └── 📁 panels/
-│       ├── 📜 __init__.py
-│       ├── 📜 commands_panel.py
-│       ├── 📜 main_panel.py
-│       └── 📜 maintenance_panel.py
+│   │   ├── 📜 __init__.py
+│   │   ├── 📜 chats_panel.py
+│   │   ├── 📜 commands_panel.py
+│   │   ├── 📜 main_panel.py
+│   │   ├── 📜 settings_panel.py
+│   │   └── 📜 maintenance_panel.py
+│   └── 📁 utils/
+│   │   └── 📜 ...
 └── 📁 backgrounds/
 └── (*.jpg, *.png файлы)
 └── Mafanya.bat

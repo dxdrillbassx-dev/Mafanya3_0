@@ -1,7 +1,7 @@
 # cogs/structure.py
 import discord
 from discord.ext import commands
-from utils.structure import get_project_structure
+from launcher.structure import get_project_structure
 
 # Импорт алиасов
 from utils.aliases import get_aliases

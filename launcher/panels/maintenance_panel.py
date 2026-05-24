@@ -2,40 +2,44 @@ import customtkinter as ctk
 
 class MaintenancePanel(ctk.CTkFrame):
     def __init__(self, parent, ui):
-        super().__init__(parent, fg_color="#0a0a12")
+        super().__init__(parent, fg_color="#0a0a0f")
         self.ui = ui
         self.setup()
 
     def setup(self):
         main_content = ctk.CTkFrame(self, fg_color="transparent")
-        main_content.pack(fill="both", expand=True, padx=15, pady=15)
+        main_content.pack(fill="both", expand=True, padx=20, pady=20)
 
-        # Левая колонка
-        left_frame = ctk.CTkFrame(main_content, fg_color="#111118", width=280, corner_radius=10)
-        left_frame.pack(side="left", fill="y", padx=(0, 15))
-        left_frame.pack_propagate(False)
+        ctk.CTkLabel(main_content, text="🔧 ТЕХНИЧЕСКОЕ ОБСЛУЖИВАНИЕ", 
+                    font=ctk.CTkFont(family="IBM Plex Mono", size=22, weight="bold"), 
+                    text_color="#ff00c8").pack(pady=(30, 40))
 
-        ctk.CTkLabel(left_frame, text="🔧 ТЕХРЕЖИМ", 
-                    font=ctk.CTkFont(size=15, weight="bold"), 
-                    text_color="#00ffcc").pack(pady=(20, 12), anchor="w", padx=20)
+        center_frame = ctk.CTkFrame(main_content, fg_color="#111118", corner_radius=20)
+        center_frame.pack(fill="both", expand=True, padx=60, pady=40)
 
-        # Центральная + правая часть
-        right_area = ctk.CTkFrame(main_content, fg_color="transparent")
-        right_area.pack(side="right", fill="both", expand=True)
+        ctk.CTkLabel(center_frame, text="ПОЛНЫЙ ТЕХРЕЖИМ", 
+                    font=ctk.CTkFont(family="IBM Plex Mono", size=28, weight="bold"), 
+                    text_color="#ff3366").pack(pady=(60, 10))
 
-        ctk.CTkLabel(right_area, text="🔧 ТЕХНИЧЕСКИЕ РАБОТЫ", 
-                    font=ctk.CTkFont(size=32, weight="bold"), 
-                    text_color="#ff00ff").pack(pady=40)
+        ctk.CTkLabel(center_frame, text="Отключает все команды кроме\nвладельца и основных", 
+                    font=ctk.CTkFont(family="IBM Plex Mono", size=14), 
+                    text_color="#aaaaaa", justify="center").pack(pady=10)
 
-        ctk.CTkLabel(right_area, text="Управление режимом техобслуживания", 
-                    font=ctk.CTkFont(size=16), 
-                    text_color="#aaaaaa").pack(pady=10)
-
-        self.tech_button = ctk.CTkButton(right_area, text="🚨 ВКЛЮЧИТЬ ПОЛНЫЙ ТЕХРЕЖИМ", 
-                                        width=420, height=80, corner_radius=12,
-                                        font=ctk.CTkFont(size=18, weight="bold"),
-                                        fg_color="#ff0066", hover_color="#cc0044",
+        self.tech_button = ctk.CTkButton(center_frame, 
+                                        text="🚨 ВКЛЮЧИТЬ ТЕХРЕЖИМ", 
+                                        width=420, height=85, 
+                                        corner_radius=16,
+                                        font=ctk.CTkFont(family="IBM Plex Mono", size=18, weight="bold"),
+                                        fg_color="#ff0066", 
+                                        hover_color="#cc0044",
                                         command=self.ui.toggle_maintenance)
-        self.tech_button.pack(pady=60)
+        self.tech_button.pack(pady=50)
 
-        # Можно добавить сюда дополнительные настройки техрежима позже
+        self.log("Панель техрежима загружена", "SYSTEM")
+
+    def log(self, message: str, prefix="INFO"):
+        try:
+            if hasattr(self.ui.current_panel, 'log'):
+                self.ui.current_panel.log(message, prefix)
+        except:
+            pass
