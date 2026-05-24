@@ -163,13 +163,25 @@ class RetroLauncherUI(ctk.CTk):
     def update_start_button(self, running: bool):
         try:
             main_panel = self.panels.get("main")
-            if main_panel and hasattr(main_panel, 'start_btn'):
+            if main_panel and hasattr(main_panel, 'start_btn') and hasattr(main_panel, 'status_label'):
                 if running:
-                    main_panel.start_btn.configure(text="■ ОСТАНОВИТЬ БОТА", fg_color="#ff3366")
-                    main_panel.status_label.configure(text="ONLINE", text_color="#00ff88")
+                    main_panel.start_btn.configure(
+                        text="■ ОСТАНОВИТЬ БОТА", 
+                        fg_color="#ff3366"
+                    )
+                    main_panel.status_label.configure(
+                        text="ONLINE", 
+                        text_color="#00ff88"
+                    )
                 else:
-                    main_panel.start_btn.configure(text="▶ ЗАПУСТИТЬ БОТА", fg_color="#00ff88")
-                    main_panel.status_label.configure(text="OFFLINE", text_color="#ff4444")
+                    main_panel.start_btn.configure(
+                        text="▶ ЗАПУСТИТЬ БОТА", 
+                        fg_color="#00ff88"
+                    )
+                    main_panel.status_label.configure(
+                        text="OFFLINE", 
+                        text_color="#ff4444"
+                    )
         except:
             pass
 

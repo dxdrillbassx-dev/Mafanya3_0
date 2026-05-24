@@ -23,7 +23,7 @@ class MainPanel(ctk.CTkFrame):
 
         # Большой статус
         self.status_frame = ctk.CTkFrame(control_frame, fg_color="#1a1a2e", height=160, corner_radius=12)
-        self.status_frame.pack(fill="x", padx=25, pady=10)
+        self.status_frame.pack(fill="x", padx=25, pady=15)
         self.status_frame.pack_propagate(False)
 
         self.status_label = ctk.CTkLabel(self.status_frame, text="OFFLINE", 
@@ -31,17 +31,17 @@ class MainPanel(ctk.CTkFrame):
                                         text_color="#ff4444")
         self.status_label.pack(expand=True)
 
-        # Кнопка запуска / остановки
-        self.toggle_btn = ctk.CTkButton(control_frame, 
+        # Большая кнопка
+        self.start_btn = ctk.CTkButton(control_frame, 
                                        text="▶ ЗАПУСТИТЬ БОТА", 
-                                       width=280, height=65, 
+                                       width=290, height=70, 
                                        corner_radius=12,
-                                       font=ctk.CTkFont(size=17, weight="bold"),
+                                       font=ctk.CTkFont(size=18, weight="bold"),
                                        fg_color="#00ff88", 
                                        text_color="black",
                                        hover_color="#00cc6a",
                                        command=self.ui.toggle_bot)
-        self.toggle_btn.pack(pady=25)
+        self.start_btn.pack(pady=30)
 
         # ====================== ПРАВАЯ КОЛОНКА — ЛОГИ ======================
         log_frame = ctk.CTkFrame(main_content, fg_color="#111118", corner_radius=12)
@@ -50,7 +50,7 @@ class MainPanel(ctk.CTkFrame):
         log_label = ctk.CTkLabel(log_frame, text="📜 СИСТЕМНЫЕ ЛОГИ", 
                                 font=ctk.CTkFont(size=16, weight="bold"), 
                                 text_color="#7777ff")
-        log_label.pack(pady=(18, 8), anchor="w", padx=25)
+        log_label.pack(pady=(20, 8), anchor="w", padx=25)
 
         self.console = ctk.CTkTextbox(log_frame, 
                                      font=ctk.CTkFont(family="Consolas", size=12),

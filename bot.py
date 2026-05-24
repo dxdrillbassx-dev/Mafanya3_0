@@ -5,6 +5,7 @@ import random
 import asyncio
 import signal
 import sys
+import json
 
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -34,6 +35,22 @@ intents.members = True
 intents.voice_states = True
 
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
+
+# ====================== ГЛОБАЛЬНЫЙ СПИСОК ОТКЛЮЧЁННЫХ КОМАНД ======================
+DISABLED_COMMANDS = set()
+
+def load_disabled_commands():
+    """Загружает список отключённых команд из файла"""
+    global DISABLED_COMMANDS
+    try:
+        if os.path.exists("disabled_commands.json"):
+            with open("disabled_commands.json", "r", encoding="utf-8") as f:
+                DISABLED_COMMANDS = set(json.load(f))
+            print(f"✅ Загружено отключённых команд: {len(DISABLED_COMMANDS)}")
+        else:
+            print("ℹ️ Файл disabled_commands.json не найден — создаётся пустой список")
+    except Exception as e:
+        print(f"⚠️ Ошибка загрузки disabled_commands.json: {e}")
 
 
 # ====================== ФИКС КОДИРОВКИ ДЛЯ WINDOWS ======================
@@ -98,6 +115,19 @@ def handle_signal(sig, frame):
 signal.signal(signal.SIGINT, handle_signal)
 if sys.platform != "win32":
     signal.signal(signal.SIGTERM, handle_signal)
+
+
+# ====================== ГЛОБАЛЬНАЯ ПРОВЕРКА ВКЛЮЧЕНИЯ КОМАНД ======================
+@bot.check
+async def is_command_enabled(ctx):
+    """Проверяет, включена ли команда"""
+    if ctx.command and ctx.command.name in DISABLED_COMMANDS:
+        try:
+            await ctx.send("❌ Эта команда временно отключена администратором.", delete_after=8)
+        except:
+            pass
+        return False
+    return True
 
 
 @bot.event
@@ -317,4 +347,5 @@ async def on_command_error(ctx, error):
 
 # ==================== ЗАПУСК БОТА ====================
 print("[*] Запуск бота Mafanya 3.0...")
+load_disabled_commands()  # Загружаем отключённые команды перед запуском
 bot.run(TOKEN)
