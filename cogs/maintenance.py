@@ -4,6 +4,8 @@ from discord.ext import commands
 import os
 import json
 
+from utils.module_descriptions import get_message   # ← Главный импорт
+
 # Глобальные переменные
 maintenance_mode = False      # Обычный режим (кроме owner)
 full_maintenance_mode = False # Полный режим (даже owner)
@@ -20,11 +22,11 @@ class Maintenance(commands.Cog):
 
         if arg is None:
             if full_maintenance_mode:
-                await ctx.send("🚨 **ПОЛНЫЙ ТЕХРЕЖИМ** активен (выключается только через лаунчер)")
+                await ctx.send(get_message("maintenance", "full_active"))
             elif maintenance_mode:
-                await ctx.send("🟡 Техрежим включён (кроме владельца)")
+                await ctx.send(get_message("maintenance", "partial_active"))
             else:
-                await ctx.send("🟢 Техрежим выключен")
+                await ctx.send(get_message("maintenance", "disabled"))
             return
 
         arg = arg.lower()
@@ -32,27 +34,27 @@ class Maintenance(commands.Cog):
         if arg in ['all', 'full', 'полный']:
             full_maintenance_mode = True
             maintenance_mode = False
-            await ctx.send("🚨 **ПОЛНЫЙ ТЕХРЕЖИМ ВКЛЮЧЁН**\nТеперь **никто** не может использовать команды.")
+            await ctx.send(get_message("maintenance", "full_enabled"))
             self.save_status(True)
-            await self.send_log("🚨 Полный техрежим включён")
+            await self.send_log(get_message("maintenance", "log_full"))
 
         elif arg in ['on', 'вкл', '1', 'enable']:
             full_maintenance_mode = False
             maintenance_mode = True
-            await ctx.send("🟡 **Техрежим включён** (все кроме тебя)")
+            await ctx.send(get_message("maintenance", "partial_enabled"))
             self.save_status(False)
-            await self.send_log("🟡 Обычный техрежим включён")
+            await self.send_log(get_message("maintenance", "log_partial"))
 
         elif arg in ['off', 'выкл', '0', 'disable']:
             if full_maintenance_mode:
-                await ctx.send("❌ Полный техрежим можно выключить **только через лаунчер**.")
+                await ctx.send(get_message("maintenance", "full_cannot_disable"))
             else:
                 maintenance_mode = False
-                await ctx.send("🟢 Техрежим выключен")
+                await ctx.send(get_message("maintenance", "disabled_success"))
                 self.save_status(False)
-                await self.send_log("🟢 Техрежим выключен")
+                await self.send_log(get_message("maintenance", "log_disabled"))
         else:
-            await ctx.send("`!tech` — статус\n`!tech on` — кроме owner\n`!tech all` — полный")
+            await ctx.send(get_message("maintenance", "help"))
 
     def save_status(self, full: bool):
         try:
@@ -80,4 +82,4 @@ async def setup(bot):
     await bot.add_cog(Maintenance(bot))
     bot.owner_id = int(os.getenv('OWNER_ID', 0))
     bot.check(check_maintenance)   # Глобальная проверка
-    print("✅ Maintenance cog загружен с partial/full режимом")
+    print(get_message("maintenance", "cog_loaded"))

@@ -5,6 +5,9 @@ import random
 import vk_api
 import os
 
+from utils.aliases import get_aliases
+from utils.module_descriptions import get_message   # ← Главный импорт
+
 
 class VKPhoto(commands.Cog):
     def __init__(self, bot):
@@ -17,17 +20,19 @@ class VKPhoto(commands.Cog):
         try:
             token = os.getenv('VK_TOKEN')
             if not token:
-                print("❌ VK_TOKEN не найден в .env")
+                print(get_message("vkphoto", "token_missing"))
                 return
 
             vk_session = vk_api.VkApi(token=token)
             self.vk = vk_session.get_api()
             
             me = self.vk.users.get(v="5.199")[0]
-            print(f"✅ VK API подключён | {me['first_name']} {me['last_name']} (id: {me['id']})")
+            print(get_message("vkphoto", "vk_connected", 
+                            name=f"{me['first_name']} {me['last_name']}", 
+                            id=me['id']))
             
         except Exception as e:
-            print(f"❌ Ошибка подключения VK: {e}")
+            print(get_message("vkphoto", "vk_connection_error", error=str(e)))
 
     def get_random_photo_url(self):
         """Получает случайное фото из сохранённых"""
@@ -79,25 +84,24 @@ class VKPhoto(commands.Cog):
 
     @commands.command(
         name="vkphoto",
-        aliases=["вкфото", "вк", "randvk", "фото", "вкрандом", "пик"]
+        aliases=get_aliases("vkphoto")
     )
     async def vkphoto(self, ctx):
         """Случайная фотка из сохранённых в ВК"""
         if not self.vk:
-            return await ctx.send("❌ VK API не подключён. Проверь токен.")
+            return await ctx.send(get_message("vkphoto", "api_not_connected"))
 
         async with ctx.typing():
             photo_url = self.get_random_photo_url()
 
         if not photo_url:
-            return await ctx.send(
-                "❌ Не удалось получить фото.\n"
-                "Убедись, что у тебя есть фото в **«Сохранённых»** или **Избранном**."
-            )
+            return await ctx.send(get_message("vkphoto", "no_photo"))
 
         embed = discord.Embed(color=0xFF69B4)
         embed.set_image(url=photo_url)
-        embed.set_footer(text=f"Запросил: {ctx.author}")
+        embed.set_footer(
+            text=get_message("vkphoto", "embed_footer", author=ctx.author)
+        )
         
         await ctx.send(embed=embed)
 

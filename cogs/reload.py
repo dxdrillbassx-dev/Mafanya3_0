@@ -1,10 +1,11 @@
+# cogs/reload.py
 import discord
 from discord.ext import commands
 import os
 from dotenv import load_dotenv
 
-# Импорт алиасов
 from utils.aliases import get_aliases
+from utils.module_descriptions import get_message   # ← Главный импорт
 
 load_dotenv()
 
@@ -23,10 +24,10 @@ class ReloadCog(commands.Cog):
     async def reload(self, ctx, *extensions):
         """Перезагрузка модулей"""
         if not self.is_owner(ctx):
-            return await ctx.send("❌ Доступ запрещён.", delete_after=8)
+            return await ctx.send(get_message("reload", "access_denied"), delete_after=8)
 
         if not extensions:
-            return await ctx.send("❌ Укажи модуль(и) или `all`")
+            return await ctx.send(get_message("reload", "no_module_specified"))
 
         if extensions[0].lower() in ['all', 'все']:
             return await self.reload_all(ctx)
@@ -39,17 +40,15 @@ class ReloadCog(commands.Cog):
     async def restart(self, ctx):
         """Полный перезапуск бота"""
         if not self.is_owner(ctx):
-            return await ctx.send("❌ Доступ запрещён.", delete_after=8)
+            return await ctx.send(get_message("reload", "access_denied"), delete_after=8)
 
-        await ctx.send("🔄 **Перезапускаю бота...**")
+        await ctx.send(get_message("reload", "restarting"))
 
         try:
-            # Закрываем текущее подключение бота
             await self.bot.close()
         except Exception as e:
             await ctx.send(f"❌ Ошибка при попытке перезапуска:\n```{e}```")
             print(f"[ERROR] Restart failed: {e}")
-
 
     async def _reload_single(self, ctx, ext: str):
         """Перезагрузка одного модуля с защитой"""
@@ -60,37 +59,58 @@ class ReloadCog(commands.Cog):
 
         try:
             await self.bot.reload_extension(full_ext)
-            await ctx.send(f"✅ **Перезагружен**: `{ext}`", delete_after=10)
+            await ctx.send(
+                get_message("reload", "reload_success", module=ext), 
+                delete_after=10
+            )
             
         except commands.ExtensionNotLoaded:
             try:
                 await self.bot.load_extension(full_ext)
-                await ctx.send(f"✅ **Загружен**: `{ext}`", delete_after=10)
+                await ctx.send(
+                    get_message("reload", "load_success", module=ext), 
+                    delete_after=10
+                )
             except Exception as e:
-                await ctx.send(f"❌ Не удалось загрузить `{ext}`:\n```{e}```", delete_after=15)
+                await ctx.send(
+                    get_message("reload", "load_error", module=ext), 
+                    delete_after=15
+                )
                 
         except commands.CommandRegistrationError as e:
-            await ctx.send(f"⚠️ **Конфликт команд** в `{ext}`:\n```{e}```", delete_after=20)
+            await ctx.send(
+                get_message("reload", "command_conflict", module=ext), 
+                delete_after=20
+            )
             
         except commands.ExtensionNotFound:
-            await ctx.send(f"❌ Модуль `{ext}` не найден.", delete_after=10)
+            await ctx.send(
+                get_message("reload", "module_not_found", module=ext), 
+                delete_after=10
+            )
             
         except Exception as e:
-            await ctx.send(f"❌ Ошибка с `{ext}`:\n```{type(e).__name__}: {e}```", delete_after=15)
+            await ctx.send(
+                get_message("reload", "reload_error", module=ext), 
+                delete_after=15
+            )
 
     # ====================== LOAD ======================
     @commands.command(aliases=get_aliases("load"))
     async def load(self, ctx, extension: str):
         """Загрузка модуля"""
         if not self.is_owner(ctx):
-            return await ctx.send("❌ Доступ запрещён.", delete_after=8)
+            return await ctx.send(get_message("reload", "access_denied"), delete_after=8)
 
         if not extension.startswith('cogs.'):
             extension = f"cogs.{extension}"
 
         try:
             await self.bot.load_extension(extension)
-            await ctx.send(f"✅ **Загружен**: `{extension}`", delete_after=10)
+            await ctx.send(
+                get_message("reload", "load_success", module=extension), 
+                delete_after=10
+            )
         except Exception as e:
             await ctx.send(f"❌ Ошибка загрузки:\n```{e}```", delete_after=15)
 
@@ -99,27 +119,35 @@ class ReloadCog(commands.Cog):
     async def unload(self, ctx, extension: str):
         """Выгрузка модуля"""
         if not self.is_owner(ctx):
-            return await ctx.send("❌ Доступ запрещён.", delete_after=8)
+            return await ctx.send(get_message("reload", "access_denied"), delete_after=8)
 
         if not extension.startswith('cogs.'):
             extension = f"cogs.{extension}"
 
         try:
             await self.bot.unload_extension(extension)
-            await ctx.send(f"✅ **Выгружен**: `{extension}`", delete_after=10)
+            await ctx.send(
+                get_message("reload", "unload_success", module=extension), 
+                delete_after=10
+            )
         except commands.ExtensionNotLoaded:
-            await ctx.send(f"⚠️ Модуль `{extension}` не был загружен.")
+            await ctx.send(
+                get_message("reload", "module_not_loaded", module=extension)
+            )
         except Exception as e:
-            await ctx.send(f"❌ Ошибка выгрузки:\n```{e}```", delete_after=15)
+            await ctx.send(
+                get_message("reload", "unload_error"), 
+                delete_after=15
+            )
 
     # ====================== RELOAD ALL ======================
     @commands.command(aliases=get_aliases("reload_all"))
     async def reload_all(self, ctx):
         """Полная перезагрузка всех модулей"""
         if not self.is_owner(ctx):
-            return await ctx.send("❌ Доступ запрещён.")
+            return await ctx.send(get_message("reload", "access_denied"))
 
-        await ctx.send("🔄 **Перезагружаю все модули...**")
+        await ctx.send(get_message("reload", "reloading_all"))
 
         successful = []
         failed = []
@@ -143,11 +171,22 @@ class ReloadCog(commands.Cog):
                     except Exception as e:
                         failed.append(f"{module_path} → {type(e).__name__}")
 
-        embed = discord.Embed(title="♻️ Полная перезагрузка завершена", color=0xFF69B4)
-        embed.add_field(name="✅ Успешно", value=f"`{len(successful)}`", inline=True)
+        embed = discord.Embed(
+            title=get_message("reload", "full_reload_title"), 
+            color=0xFF69B4
+        )
+        embed.add_field(
+            name=get_message("reload", "full_reload_success"), 
+            value=f"`{len(successful)}`", 
+            inline=True
+        )
         
         if failed:
-            embed.add_field(name="❌ Ошибок", value=f"`{len(failed)}`", inline=True)
+            embed.add_field(
+                name=get_message("reload", "full_reload_errors"), 
+                value=f"`{len(failed)}`", 
+                inline=True
+            )
             embed.description = "```" + "\n".join(failed[:10]) + "```"
 
         await ctx.send(embed=embed)
@@ -155,5 +194,5 @@ class ReloadCog(commands.Cog):
 
 async def setup(bot):
     if OWNER_ID == 0:
-        print("⚠️ OWNER_ID не указан в .env!")
+        print(get_message("reload", "owner_id_missing"))
     await bot.add_cog(ReloadCog(bot))

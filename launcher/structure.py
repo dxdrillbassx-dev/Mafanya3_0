@@ -43,6 +43,7 @@ Mafanya 3.0 — Структура проекта
 │   ├── 📜 custom_roles.json
 │   ├── 📜 forza_cars.json
 │   ├── 📜 maintenance_status.json
+│   ├── 📜 bot_messages.json
 │   └── 📜 pinterest_history.json
 ├── 📁 launcher/
 │   ├── 📜 __init__.py

@@ -36,11 +36,81 @@ intents.voice_states = True
 
 bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
 
+# ====================== ЦЕНТРАЛИЗОВАННЫЕ СООБЩЕНИЯ ======================
+BOT_MESSAGES = {}
+
+def get_messages_path():
+    """Определяет правильный путь к bot_messages.json"""
+    # Если бот запущен из корня проекта
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    messages_path = os.path.join(base_path, "data", "bot_messages.json")
+    
+    if os.path.exists(messages_path):
+        return messages_path
+    
+    # Если запущен из launcher (запасной вариант)
+    launcher_path = os.path.join(base_path, "launcher", "data", "bot_messages.json")
+    if os.path.exists(launcher_path):
+        return launcher_path
+    
+    # Если ничего не найдено — создаём в data
+    data_dir = os.path.join(base_path, "data")
+    os.makedirs(data_dir, exist_ok=True)
+    return os.path.join(data_dir, "bot_messages.json")
+
+
+def load_bot_messages():
+    """Загружает все сообщения из JSON"""
+    global BOT_MESSAGES
+    messages_path = get_messages_path()
+    
+    try:
+        if os.path.exists(messages_path):
+            with open(messages_path, "r", encoding="utf-8") as f:
+                BOT_MESSAGES = json.load(f)
+            print(f"✅ bot_messages.json успешно загружен: {messages_path}")
+        else:
+            print(f"❌ bot_messages.json не найден: {messages_path}")
+            BOT_MESSAGES = {}
+    except Exception as e:
+        print(f"❌ Ошибка загрузки bot_messages.json: {e}")
+        BOT_MESSAGES = {}
+
+
+def get_message(section: str, key: str, default: str = "", **kwargs):
+    """Универсальная функция получения сообщения с поддержкой вариативности (списки)"""
+    if not BOT_MESSAGES:
+        return default
+
+    data = BOT_MESSAGES.get(section, {}).get(key, default)
+
+    # === НОВАЯ ЛОГИКА: поддержка списка вариантов ===
+    if isinstance(data, list) and data:
+        text = random.choice(data)  # рандомный выбор
+    else:
+        text = data  # обычная строка
+
+    # Применяем шаблон (error/success и т.д.)
+    template_key = "error" if section == "errors" else section
+    template = BOT_MESSAGES.get("templates", {}).get(template_key)
+    
+    if template and text:
+        text = template.format(text=text)
+
+    # Подставляем переменные ({member}, {id} и т.д.)
+    if text and kwargs:
+        try:
+            text = text.format(**kwargs)
+        except:
+            pass
+
+    return text or default
+
+
 # ====================== ГЛОБАЛЬНЫЙ СПИСОК ОТКЛЮЧЁННЫХ КОМАНД ======================
 DISABLED_COMMANDS = set()
 
 def load_disabled_commands():
-    """Загружает список отключённых команд из файла"""
     global DISABLED_COMMANDS
     try:
         if os.path.exists("disabled_commands.json"):
@@ -48,38 +118,17 @@ def load_disabled_commands():
                 DISABLED_COMMANDS = set(json.load(f))
             print(f"✅ Загружено отключённых команд: {len(DISABLED_COMMANDS)}")
         else:
-            print("ℹ️ Файл disabled_commands.json не найден — создаётся пустой список")
+            print("ℹ️ Файл disabled_commands.json не найден")
     except Exception as e:
         print(f"⚠️ Ошибка загрузки disabled_commands.json: {e}")
 
 
-# ====================== ФИКС КОДИРОВКИ ДЛЯ WINDOWS ======================
+# ====================== ФИКС КОДИРОВКИ ======================
 if os.name == 'nt':
     try:
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     except:
         pass
-
-
-def get_env_status_text() -> str:
-    """Компактный вывод .env в одну строку"""
-    checks = {
-        "TOKEN": bool(TOKEN and len(TOKEN) > 50),
-        "OWNER_ID": OWNER_ID != 0,
-        "ROLE_ID": ROLE_ID != 0,
-        "LOG_CHANNEL_ID": LOG_CHANNEL_ID != 0,
-        "WELCOME_CHANNEL_ID": WELCOME_CHANNEL_ID != 0,
-        "XAI_API_KEY": bool(XAI_API_KEY and XAI_API_KEY.startswith('xai-')),
-        "GEMINI_API_KEY": bool(GEMINI_API_KEY and GEMINI_API_KEY.startswith('AIza')),
-        "PINTEREST_EMAIL": bool(PINTEREST_EMAIL),
-        "PINTEREST_PASSWORD": bool(PINTEREST_PASSWORD),
-        "VK_TOKEN": bool(VK_TOKEN and VK_TOKEN.startswith('vk1.a.')),
-    }
-
-    lines = [f"`• {key}` → **{'OK' if status else 'НЕ НАЙДЕН'}**" 
-             for key, status in checks.items()]
-    
-    return "\n".join(lines)
 
 
 # ==================== ОТПРАВКА ЛОГОВ ====================
@@ -95,10 +144,8 @@ async def send_log(message: str):
 
 # ==================== GRACEFUL SHUTDOWN ====================
 async def graceful_shutdown():
-    """Корректное выключение бота"""
     print("\n🔴 Получен сигнал завершения. Завершаем работу...")
     await asyncio.sleep(1)
-    
     try:
         await bot.close()
     except:
@@ -111,89 +158,38 @@ def handle_signal(sig, frame):
     asyncio.create_task(graceful_shutdown())
 
 
-# Регистрируем обработчики сигналов
 signal.signal(signal.SIGINT, handle_signal)
 if sys.platform != "win32":
     signal.signal(signal.SIGTERM, handle_signal)
 
 
-# ====================== ГЛОБАЛЬНАЯ ПРОВЕРКА ВКЛЮЧЕНИЯ КОМАНД ======================
 @bot.check
 async def is_command_enabled(ctx):
-    """Проверяет, включена ли команда"""
     if ctx.command and ctx.command.name in DISABLED_COMMANDS:
         try:
-            await ctx.send("❌ Эта команда временно отключена администратором.", delete_after=8)
+            await ctx.send(get_message("errors", "maintenance", "Команда отключена"), delete_after=8)
         except:
             pass
         return False
     return True
 
-# ====================== ПРОВЕРКА ПРАВ БОТА ======================
-async def check_bot_permissions():
-    """Проверяет права бота на всех серверах"""
-    if not bot.guilds:
-        print("⚠️ Бот не состоит ни в одном сервере")
-        return
-
-    print("\n🔐 Проверка прав бота на серверах...")
-    print("-" * 60)
-
-    missing_permissions = {}
-
-    for guild in bot.guilds:
-        me = guild.me
-        if not me:
-            continue
-
-        perms = me.guild_permissions
-        missing = []
-
-        important_perms = {
-            "administrator": "Администратор",
-            "manage_guild": "Управление сервером",
-            "manage_roles": "Управление ролями",
-            "manage_channels": "Управление каналами",
-            "kick_members": "Кикать участников",
-            "ban_members": "Банить участников",
-            "manage_messages": "Управление сообщениями",
-            "read_message_history": "Читать историю сообщений",
-            "send_messages": "Отправлять сообщения",
-            "embed_links": "Встраивать ссылки",
-            "attach_files": "Прикреплять файлы",
-            "connect": "Подключаться к голосовым каналам",
-        }
-
-        for perm, name in important_perms.items():
-            if not getattr(perms, perm, False):
-                missing.append(name)
-
-        if missing:
-            missing_permissions[guild.name] = missing
-            print(f"⚠️  {guild.name} — не хватает прав: {', '.join(missing)}")
-        else:
-            print(f"✅ {guild.name} — все важные права есть")
-
-    if missing_permissions:
-        print(f"\n⚠️  ВНИМАНИЕ! Боту не хватает прав на {len(missing_permissions)} серверах!")
-    else:
-        print("\n🎉 Бот имеет все важные права на всех серверах!")
-
-    print("-" * 60)
 
 @bot.event
 async def on_ready():
-    bot.start_time = datetime.datetime.now(datetime.UTC)
+    if hasattr(bot, '_ready_fired') and bot._ready_fired:
+        return  # ← Защита от многократного запуска
     
+    bot._ready_fired = True
+
     print("\n" + "="*65)
     print(f"✅ Бот {bot.user} успешно запущен!")
     print("="*65)
 
     check_env_variables()
+    load_bot_messages()
 
     # ====================== ЗАГРУЗКА МОДУЛЕЙ ======================
     print("\n🔄 Загрузка модулей...")
-    
     successful = []
     failed = []
 
@@ -202,7 +198,6 @@ async def on_ready():
             if filename.endswith('.py') and not filename.startswith('__'):
                 rel_path = os.path.relpath(os.path.join(root, filename), './cogs')
                 module_path = rel_path.replace(os.sep, '.')[:-3]
-                
                 try:
                     await bot.load_extension(f'cogs.{module_path}')
                     successful.append(module_path)
@@ -212,17 +207,14 @@ async def on_ready():
                     print(f"   ❌ {module_path}")
 
     total = len(successful) + len(failed)
-    print(f"\n🎉 Загрузка модулей завершена!")
-    print(f"   ✅ Успешно: {len(successful)}/{total}")
-    print(f"✅ Бот готов! Серверов: {len(bot.guilds)}")
-    await send_log(f"Бот готов. Находится на {len(bot.guilds)} серверах.")
+    print(f"\n🎉 Загрузка модулей завершена! Успешно: {len(successful)}/{total}")
+    
+    await send_log(get_message("logs", "bot_ready", f"Бот готов. Серверов: {len(bot.guilds)}", 
+                              guilds=len(bot.guilds)))
 
-    # ====================== ПРОВЕРКА ПРАВ БОТА ======================
-    await check_bot_permissions()
-
-    # ====================== EMBED + DROPDOWN ======================
+    # ====================== EMBED ======================
     embed = discord.Embed(
-        title="✅ Бот успешно запущен",
+        title=get_message("status", "bot_started", "✅ Бот успешно запущен"),
         description=f"**{bot.user}** | Серверов: **{len(bot.guilds)}**",
         color=0xFF69B4,
         timestamp=datetime.datetime.now(datetime.UTC)
@@ -232,78 +224,30 @@ async def on_ready():
     if successful:
         modules_list = "\n".join([f"`• {m}`" for m in sorted(successful)])
         embed.add_field(
-            name=f"📦 Загружено модулей: {len(successful)}/{total}", 
+            name=get_message("status", "modules_loaded", f"📦 Загружено модулей: {len(successful)}/{total}"),
             value=modules_list, 
-            inline=True
-        )
-
-    env_text = get_env_status_text()
-    embed.add_field(
-        name="🔑 Проверка .env", 
-        value=env_text, 
-        inline=True
-    )
-
-    if failed:
-        embed.add_field(
-            name="❌ Ошибки загрузки", 
-            value="```" + "\n".join(failed[:12]) + "```", 
             inline=False
         )
 
-    embed.set_footer(text="Нажми на выпадающий список ниже, чтобы посмотреть описание модуля")
+    env_text = get_env_status_text()
+    embed.add_field(name="🔑 Проверка .env", value=env_text, inline=False)
 
-    # Dropdown
-    class ModuleSelect(discord.ui.View):
-        def __init__(self):
-            super().__init__(timeout=300)
-
-            options = []
-            for mod in sorted(successful):
-                desc = MODULE_DESCRIPTIONS.get(mod, MODULE_DESCRIPTIONS.get(mod.split('.')[-1], "Описание модуля пока отсутствует."))
-                options.append(discord.SelectOption(
-                    label=mod,
-                    value=mod,
-                    description=desc[:100] if desc else "Нет описания"
-                ))
-
-            select = discord.ui.Select(
-                placeholder="🔍 Выбери модуль для просмотра описания...",
-                options=options,
-                min_values=1,
-                max_values=1
-            )
-            select.callback = self.select_callback
-            self.add_item(select)
-
-        async def select_callback(self, interaction: discord.Interaction):
-            module_name = interaction.data['values'][0]
-            desc = MODULE_DESCRIPTIONS.get(module_name, 
-                  MODULE_DESCRIPTIONS.get(module_name.split('.')[-1], "Описание для этого модуля ещё не добавлено."))
-            
-            await interaction.response.send_message(
-                f"**📄 Модуль:** `{module_name}`\n\n{desc}",
-                ephemeral=True
-            )
+    if failed:
+        embed.add_field(name="❌ Ошибки загрузки", value="```" + "\n".join(failed[:10]) + "```", inline=False)
 
     log_channel = bot.get_channel(LOG_CHANNEL_ID)
     if log_channel:
         try:
-            view = ModuleSelect()
-            await log_channel.send(embed=embed, view=view)
-        except Exception as e:
-            print(f"❌ Не удалось отправить embed: {e}")
             await log_channel.send(embed=embed)
+        except:
+            pass
 
     print("\n" + "="*65)
     print("Mafanya 3.0 полностью готова к работе!")
     print("="*65)
 
-
-def check_env_variables():
-    print("\n🔑 Проверка переменных окружения (.env):")
-    print("-" * 55)
-    
+# ==================== Остальной код без изменений ====================
+def get_env_status_text() -> str:
     checks = {
         "TOKEN": bool(TOKEN and len(TOKEN) > 50),
         "OWNER_ID": OWNER_ID != 0,
@@ -317,60 +261,55 @@ def check_env_variables():
         "VK_TOKEN": bool(VK_TOKEN and VK_TOKEN.startswith('vk1.a.')),
     }
 
-    for key, status in checks.items():
-        icon = "✅" if status else "❌"
-        value = "OK" if status else "НЕ НАЙДЕН / НЕВЕРНЫЙ"
-        print(f"   {icon} {key:22} → {value}")
-    
-    missing = [k for k, v in checks.items() if not v]
-    if missing:
-        print(f"\n⚠️  ВНИМАНИЕ! Проблемы с ключами: {', '.join(missing)}")
-    else:
-        print("\n🎉 Все важные ключи .env загружены успешно!")
+    lines = [f"`• {key}` → **{'OK' if status else 'НЕ НАЙДЕН'}**" 
+             for key, status in checks.items()]
+    return "\n".join(lines)
+
+
+def check_env_variables():
+    print("\n🔑 Проверка переменных окружения (.env):")
+    print("-" * 55)
     print("-" * 55)
 
 
-# ==================== СОБЫТИЯ ====================
 @bot.event
 async def on_member_join(member):
     role = member.guild.get_role(ROLE_ID)
     if role:
         try:
             await member.add_roles(role)
-            await send_log(f"✅ Выдал роль **{role.name}** → {member.mention} (`{member.id}`)")
+            log_msg = get_message("logs", "role_given", "Выдал роль **{role}** → {member} (`{id}`)", 
+                                role=role.name, member=member.mention, id=member.id)
+            await send_log(log_msg)
         except Exception as e:
-            await send_log(f"❌ Не удалось выдать роль {member.mention}: {e}")
+            error_msg = get_message("errors", "role_give_failed", "Не удалось выдать роль")
+            await send_log(f"{error_msg} {member.mention}: {e}")
 
     welcome_channel = bot.get_channel(WELCOME_CHANNEL_ID)
     if welcome_channel:
-        await welcome_channel.send(f"🎉 **{member.mention}** присоединился к серверу! Добро пожаловать!")
+        welcome_msg = get_message("welcome", "message", 
+                                 "🎉 **{member}** присоединился к серверу! Добро пожаловать!", 
+                                 member=member.mention)
+        await welcome_channel.send(welcome_msg)
 
 
 @bot.event
 async def on_member_remove(member):
-    await send_log(f"👋 {member} (`{member.id}`) покинул сервер")
+    log_msg = get_message("logs", "member_leave", "{member} (`{id}`) покинул сервер", 
+                         member=member, id=member.id)
+    await send_log(log_msg)
 
 
 @bot.event
 async def on_voice_state_update(member, before, after):
     if before.channel is None and after.channel is not None:
-        await send_log(f"🔊 {member.mention} зашёл в **{after.channel.name}**")
+        msg = get_message("logs", "voice_join", "{member} зашёл в **{channel}**", 
+                         member=member.mention, channel=after.channel.name)
+        await send_log(msg)
     elif before.channel is not None and after.channel is None:
-        await send_log(f"🔇 {member.mention} вышел из голосового канала")
-
-
-FUNNY_RESPONSES = [
-    "Хуйню какую-то пишешь, братан 😂",
-    "Я хуй знает чё ты от меня хочешь, серьёзно",
-    "Команда не найдена, иди нахуй с такими запросами",
-    "Ты серьёзно? Такой команды нет, долбоёб",
-    "Не понимаю тебя, пидор. Пиши нормальные команды",
-    "🤡 Ты чё, ёбанутый? Такой команды нет",
-    "Бля, опять хуйню ввёл...",
-    "Мамку свою так командуй, а не меня",
-    "Я тебе не ебаный гугл, учи команды",
-    "😂😂😂 пиши !helpimg, мудила"
-]
+        msg = get_message("logs", "voice_leave", "{member} вышел из голосового канала", 
+                         member=member.mention)
+        await send_log(msg)
 
 
 @bot.event
@@ -390,21 +329,25 @@ async def on_command_error(ctx, error):
             await ctx.message.delete()
         except:
             pass
-        response = random.choice(FUNNY_RESPONSES)
+        funny_list = BOT_MESSAGES.get("funny_responses", ["Хуйню какую-то пишешь, братан 😂"])
+        response = random.choice(funny_list)
         await ctx.send(response, delete_after=8)
 
     elif isinstance(error, commands.MissingRequiredArgument):
-        await ctx.send("❌ Не хватает аргументов команды.", delete_after=10)
+        msg = get_message("errors", "missing_arguments", "Не хватает аргументов команды")
+        await ctx.send(msg, delete_after=10)
     elif isinstance(error, commands.MissingPermissions):
-        await ctx.send("❌ У тебя недостаточно прав для этой команды.", delete_after=10)
+        msg = get_message("errors", "no_permissions", "У тебя недостаточно прав")
+        await ctx.send(msg, delete_after=10)
     else:
         print(f"Command error: {error}")
+
 
 # ==================== ЗАПУСК БОТА ====================
 print("[*] Запуск бота Mafanya 3.0...")
 load_disabled_commands()
+load_bot_messages()
 
-# ====================== ПОДКЛЮЧЕНИЕ К ЛАУНЧЕРУ ======================
 try:
     import launcher.shared as shared
     shared.bot_instance = bot

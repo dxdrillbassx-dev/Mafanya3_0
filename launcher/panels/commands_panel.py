@@ -1,7 +1,14 @@
 import customtkinter as ctk
-from utils.aliases import COMMAND_ALIASES
+from launcher.utils.uniform_card import UniformCard
+from utils.aliases import (
+    COMMAND_ALIASES,
+    COMMAND_CATEGORIES,
+    CATEGORY_DISPLAY,
+    save_aliases
+)
 import json
 import os
+
 
 class CommandsPanel(ctk.CTkFrame):
     def __init__(self, parent, ui):
@@ -32,103 +39,92 @@ class CommandsPanel(ctk.CTkFrame):
         main_content = ctk.CTkFrame(self, fg_color="transparent")
         main_content.pack(fill="both", expand=True, padx=20, pady=20)
 
-        # Левая панель — категории
-        left_frame = ctk.CTkFrame(main_content, fg_color="#111118", width=360, corner_radius=16)
-        left_frame.pack(side="left", fill="y", padx=(0, 20))
-        left_frame.pack_propagate(False)
+        # Две колонки с одинаковой структурой
+        main_content.grid_columnconfigure((0, 1), weight=1, uniform="equal")
+        main_content.grid_rowconfigure(0, weight=1)
+
+        # ==================== ЛЕВАЯ КОЛОНКА ====================
+        left_frame = ctk.CTkFrame(main_content, fg_color="#111118", corner_radius=16)
+        left_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
         ctk.CTkLabel(left_frame, text="📁 КОМАНДЫ", 
-                    font=ctk.CTkFont(family="IBM Plex Mono", size=20, weight="bold"), 
-                    text_color="#ff00c8").pack(pady=(25, 15), anchor="w", padx=25)
+                    font=ctk.CTkFont(family="IBM Plex Mono", size=18, weight="bold"), 
+                    text_color="#ff00c8").pack(pady=(22, 12), anchor="w", padx=22)
 
-        # Категории
-        category_map = {
-            "BASIC": ["ping", "hello", "about", "clear", "userinfo", "myid", "show_aliases", "botstat", "tech"],
-            "FORZA": ["forza_status", "forzaprofile"],
-            "VOICE AI": ["join_voice", "leave_voice", "tts"],
-            "VOICE STT": ["start_listen", "stop_listen", "record_voice"],
-            "CUSTOM ROLE": ["createrole", "listcustomroles"],
-            "FUN": ["meme", "eightball"],
-            "MODERATION": ["ban", "kick", "mute", "unmute"],
-            "PHOTO": ["pinterest", "vkphoto"],
-            "AUDIO": ["play", "skip", "pause", "resume", "leave"],
-            "RELOAD": ["reload", "restart", "load", "unload", "reload_all"],
-        }
+        scroll_left = ctk.CTkScrollableFrame(left_frame, fg_color="transparent")
+        scroll_left.pack(fill="both", expand=True, padx=10, pady=(0, 15))
 
-        categories = {
-            "🌍 basic": "BASIC",
-            "🏎️ forza": "FORZA",
-            "🎙️ voice_ai": "VOICE AI",
-            "🎤 voice_stt": "VOICE STT",
-            "👑 custom_role": "CUSTOM ROLE",
-            "🎲 fun": "FUN",
-            "🛡️ moderation": "MODERATION",
-            "🖼️ photo": "PHOTO",
-            "🎵 audio": "AUDIO",
-            "🔄 reload": "RELOAD",
-        }
+        for cat_key, display_name in CATEGORY_DISPLAY.items():
+            commands = COMMAND_CATEGORIES.get(cat_key, [])
+            count = len(commands)
+            self.create_category_button(scroll_left, display_name, cat_key, count)
 
-        for display_name, cat_key in categories.items():
-            count = len(category_map.get(cat_key, []))
-            self.create_category_button(left_frame, display_name, cat_key, count)
-
-        # Правая панель
+        # ==================== ПРАВАЯ КОЛОНКА ====================
         self.right_frame = ctk.CTkFrame(main_content, fg_color="#111118", corner_radius=16)
-        self.right_frame.pack(side="right", fill="both", expand=True)
+        self.right_frame.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
 
         self.show_category("BASIC")
 
     def create_category_button(self, parent, display_name, cat_key, count):
-        btn_frame = ctk.CTkFrame(parent, fg_color="#1a1a2e", corner_radius=12, height=52)
-        btn_frame.pack(pady=6, padx=20, fill="x")
-        btn_frame.pack_propagate(False)
-
-        name_label = ctk.CTkLabel(btn_frame, text=display_name, 
-                                 font=ctk.CTkFont(family="IBM Plex Mono", size=14, weight="bold"),
-                                 text_color="#e0f8ff", anchor="w")
-        name_label.pack(side="left", padx=22, pady=12)
-
-        count_label = ctk.CTkLabel(btn_frame, text=str(count), 
-                                  font=ctk.CTkFont(family="IBM Plex Mono", size=14, weight="bold"),
-                                  text_color="#ff00c8")
-        count_label.pack(side="right", padx=22, pady=12)
-
-        # Кликабельность всей области
-        for widget in (btn_frame, name_label, count_label):
-            widget.bind("<Button-1>", lambda e, k=cat_key: self.show_category(k))
-            widget.bind("<Enter>", lambda e: btn_frame.configure(fg_color="#2a2a44"))
-            widget.bind("<Leave>", lambda e: btn_frame.configure(fg_color="#1a1a2e"))
+        card = UniformCard(parent, text=display_name, count=count, height=56)
+        
+        card.bind("<Button-1>", lambda e, k=cat_key: self.show_category(k))
+        card.bind("<Enter>", lambda e: card.configure(fg_color="#2a2a44"))
+        card.bind("<Leave>", lambda e: card.configure(fg_color="#1a1a2e"))
+        
+        card.pack(pady=6, padx=12, fill="x")
 
     def show_category(self, category_key: str):
         self.current_category = category_key
+
+        # Очищаем правую колонку
         for widget in self.right_frame.winfo_children():
             widget.destroy()
 
-        header = ctk.CTkFrame(self.right_frame, fg_color="transparent")
-        header.pack(fill="x", pady=15, padx=25)
+        # Заголовок правой колонки (одинаковый стиль с левым)
+        ctk.CTkLabel(self.right_frame, text=f"/commands/{category_key.lower()}", 
+                    font=ctk.CTkFont(family="IBM Plex Mono", size=18, weight="bold"), 
+                    text_color="#ff00c8").pack(pady=(22, 12), anchor="w", padx=22)
 
-        ctk.CTkLabel(header, text=f"/commands/{category_key.lower()}", 
-                    font=ctk.CTkFont(family="IBM Plex Mono", size=16, weight="bold"),
-                    text_color="#ff00c8").pack(anchor="w")
+        scroll_right = ctk.CTkScrollableFrame(self.right_frame, fg_color="transparent")
+        scroll_right.pack(fill="both", expand=True, padx=10, pady=(0, 15))
 
-        scroll = ctk.CTkScrollableFrame(self.right_frame, fg_color="transparent")
-        scroll.pack(fill="both", expand=True, padx=25, pady=10)
+        # Список команд
+        for cmd in sorted(COMMAND_CATEGORIES.get(category_key, [])):
+            self.create_command_row(scroll_right, cmd)
 
-        category_map = {
-            "BASIC": ["ping", "hello", "about", "clear", "userinfo", "myid", "show_aliases", "botstat", "tech"],
-            "FORZA": ["forza_status", "forzaprofile"],
-            "VOICE AI": ["join_voice", "leave_voice", "tts"],
-            "VOICE STT": ["start_listen", "stop_listen", "record_voice"],
-            "CUSTOM ROLE": ["createrole", "listcustomroles"],
-            "FUN": ["meme", "eightball"],
-            "MODERATION": ["ban", "kick", "mute", "unmute"],
-            "PHOTO": ["pinterest", "vkphoto"],
-            "AUDIO": ["play", "skip", "pause", "resume", "leave"],
-            "RELOAD": ["reload", "restart", "load", "unload", "reload_all"],
-        }
+    def create_command_row(self, parent, cmd_name):
+        is_disabled = cmd_name in self.disabled_commands
 
-        for cmd in sorted(category_map.get(category_key, [])):
-            self.create_command_row(scroll, cmd)
+        # Сильно уменьшили высоту правых строк
+        card = UniformCard(parent, text=f"!{cmd_name}", height=48)   # ← было 52, теперь 48
+        card.pack(pady=6, padx=12, fill="x")
+
+        alias_str = self.get_short_aliases(cmd_name)
+
+        if alias_str:
+            alias_label = ctk.CTkLabel(card, text=alias_str,
+                                     font=ctk.CTkFont(family="IBM Plex Mono", size=12),
+                                     text_color="#88ddff")
+            alias_label.place(relx=0.48, rely=0.5, anchor="w")
+
+        btn_frame = ctk.CTkFrame(card, fg_color="transparent")
+        btn_frame.place(relx=1.0, rely=0.5, anchor="e", x=-15)
+
+        toggle_icon = "🔴" if is_disabled else "🟢"
+        toggle_color = "#ff3366" if is_disabled else "#00ffaa"
+        
+        toggle_btn = ctk.CTkButton(btn_frame, text=toggle_icon, width=40, height=40,
+                                  corner_radius=10, fg_color=toggle_color, 
+                                  hover_color="#2a2a44", font=ctk.CTkFont(size=17),
+                                  command=lambda c=cmd_name: self.toggle_command(c))
+        toggle_btn.pack(side="left", padx=3)
+
+        info_btn = ctk.CTkButton(btn_frame, text="ℹ", width=40, height=40,
+                                corner_radius=10, fg_color="#6666ff", 
+                                hover_color="#5555cc", font=ctk.CTkFont(size=16, weight="bold"),
+                                command=lambda c=cmd_name: self.show_command_info(c))
+        info_btn.pack(side="left", padx=3)
 
     def get_short_aliases(self, cmd_name):
         aliases = COMMAND_ALIASES.get(cmd_name, [])
@@ -200,7 +196,7 @@ class CommandsPanel(ctk.CTkFrame):
                     font=ctk.CTkFont(family="IBM Plex Mono", size=16, weight="bold"),
                     text_color=status_color).pack(pady=(0, 30))
 
-        # Алиасы
+        # ==================== АЛИАСЫ ====================
         alias_frame = ctk.CTkFrame(main_frame, fg_color="#1a1a2e", corner_radius=12)
         alias_frame.pack(fill="x", pady=15, padx=25)
 
@@ -226,7 +222,14 @@ class CommandsPanel(ctk.CTkFrame):
                                fg_color="#ff00c8", command=self.add_alias)
         add_btn.pack(side="right")
 
-        # Информация
+        # Кнопка сохранения
+        save_btn = ctk.CTkButton(alias_frame, text="💾 СОХРАНИТЬ АЛИАСЫ В ФАЙЛ", 
+                                fg_color="#00ffaa", text_color="#000000", height=50,
+                                font=ctk.CTkFont(family="IBM Plex Mono", size=14, weight="bold"),
+                                command=self.save_current_aliases)
+        save_btn.pack(pady=15, padx=20, fill="x")
+
+        # ==================== ИНФОРМАЦИЯ ====================
         info_frame = ctk.CTkFrame(main_frame, fg_color="#1a1a2e", corner_radius=12)
         info_frame.pack(fill="x", pady=15, padx=25)
 
@@ -254,6 +257,22 @@ class CommandsPanel(ctk.CTkFrame):
                                 font=ctk.CTkFont(family="IBM Plex Mono", size=15, weight="bold"),
                                 command=lambda: self.show_category(self.current_category))
         back_btn.pack(pady=30)
+
+    def save_current_aliases(self):
+        if not hasattr(self, 'cmd_name_for_edit') or not hasattr(self, 'current_aliases'):
+            self.ui.log_to_current_panel("Ошибка: нет данных для сохранения", "ERROR")
+            return
+
+        new_dict = COMMAND_ALIASES.copy()
+        new_dict[self.cmd_name_for_edit] = self.current_aliases.copy()
+
+        success, msg = save_aliases(new_dict)
+        if success:
+            self.ui.log_to_current_panel(msg, "SUCCESS")
+            # ← Главное исправление: переоткрываем инфо команды, а не список
+            self.show_command_info(self.cmd_name_for_edit)
+        else:
+            self.ui.log_to_current_panel(msg, "ERROR")
 
     def refresh_aliases_display(self):
         for widget in self.alias_container.winfo_children():

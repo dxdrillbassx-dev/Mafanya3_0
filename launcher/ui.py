@@ -136,6 +136,23 @@ class RetroLauncherUI(ctk.CTk):
 
         self.switch_panel("main")
 
+    def force_kill_bot(self):
+        """Полное убийство процесса бота"""
+        success, msg = self.core.force_kill()
+        self.log_to_current_panel(msg, "CRITICAL" if success else "ERROR")
+        if success:
+            self.update_start_button(False)
+
+    def nuke_all_processes(self):
+        """Полная ядерная очистка всех процессов"""
+        self.log_to_current_panel("☢ Запущена полная очистка всех процессов Mafanya...", "CRITICAL")
+        
+        success, msg = self.core.kill_all_python_processes()
+        self.log_to_current_panel(msg, "CRITICAL" if success else "ERROR")
+        
+        # Обновляем статус
+        self.update_start_button(False)
+
     def switch_panel(self, panel_name: str):
         if self.current_panel:
             self.current_panel.pack_forget()

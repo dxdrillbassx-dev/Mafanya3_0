@@ -2,8 +2,8 @@
 import discord
 import datetime
 from discord.ext import commands
-from utils.aliases import get_aliases   # ← Добавили импорт
-from utils.aliases import get_aliases, get_all_aliases_formatted
+from utils.aliases import get_aliases
+from utils.module_descriptions import get_message  # ← главный импорт
 
 
 class Basic(commands.Cog):
@@ -13,24 +13,33 @@ class Basic(commands.Cog):
     @commands.command(aliases=get_aliases("ping"))
     async def ping(self, ctx):
         """Пинг бота"""
-        await ctx.reply(f'🏓 Понг! Задержка: `{round(self.bot.latency * 1000)}ms`')
+        latency = round(self.bot.latency * 1000)
+        await ctx.reply(get_message("basic", "ping", latency=latency))
 
     @commands.command(aliases=get_aliases("hello"))
     async def hello(self, ctx):
         """Приветствие"""
-        await ctx.reply(f'Привет, {ctx.author.mention}! 👋')
+        await ctx.reply(get_message("basic", "hello", member=ctx.author.mention))
 
     @commands.command(aliases=get_aliases("about"))
     async def about(self, ctx):
         """Информация о боте"""
         embed = discord.Embed(
-            title="📌 Mafanya 3.0",
-            description="Современный Discord бот с музыкой, ИИ и личными ролями.",
+            title=get_message("basic", "about_title"),
+            description=get_message("basic", "about_description"),
             color=0xFF69B4
         )
-        embed.add_field(name="Префикс", value="`!`", inline=True)
-        embed.add_field(name="Команды", value="`!help` или `!меню`", inline=True)
-        embed.set_footer(text="by Sobrina")
+        embed.add_field(
+            name=get_message("basic", "about_prefix"),
+            value=get_message("basic", "about_prefix_value"),
+            inline=True
+        )
+        embed.add_field(
+            name=get_message("basic", "about_commands"),
+            value=get_message("basic", "about_commands_value"),
+            inline=True
+        )
+        embed.set_footer(text=get_message("basic", "about_footer"))
         await ctx.reply(embed=embed)
 
     @commands.command(aliases=get_aliases("clear"))
@@ -43,31 +52,54 @@ class Basic(commands.Cog):
             amount = 100
             
         await ctx.channel.purge(limit=amount + 1)
-        await ctx.send(f"🧹 Удалено **{amount}** сообщений!", delete_after=5)
+        await ctx.send(
+            get_message("basic", "clear_success", amount=amount), 
+            delete_after=5
+        )
 
-    # ==================== ПОЛУЧЕНИЕ ID ====================
     @commands.command(aliases=get_aliases("userinfo"))
     async def userinfo(self, ctx, member: discord.Member = None):
         """Показывает ID пользователя"""
         member = member or ctx.author
 
         embed = discord.Embed(
-            title="🆔 Информация о пользователе",
+            title=get_message("basic", "userinfo_title"),
             color=0xFF69B4
         )
         embed.set_thumbnail(url=member.display_avatar.url)
-        embed.add_field(name="Имя", value=f"{member} (`{member.display_name}`)", inline=False)
-        embed.add_field(name="ID", value=f"`{member.id}`", inline=False)
-        embed.add_field(name="Упоминание", value=member.mention, inline=False)
-        embed.add_field(name="Аккаунт создан", value=member.created_at.strftime("%d.%m.%Y"), inline=True)
-        embed.add_field(name="Присоединился к серверу", value=member.joined_at.strftime("%d.%m.%Y") if member.joined_at else "Неизвестно", inline=True)
+        
+        embed.add_field(
+            name=get_message("basic", "userinfo_name"),
+            value=f"{member} (`{member.display_name}`)",
+            inline=False
+        )
+        embed.add_field(
+            name=get_message("basic", "userinfo_id"),
+            value=f"`{member.id}`",
+            inline=False
+        )
+        embed.add_field(
+            name=get_message("basic", "userinfo_mention"),
+            value=member.mention,
+            inline=False
+        )
+        embed.add_field(
+            name=get_message("basic", "userinfo_created"),
+            value=member.created_at.strftime("%d.%m.%Y"),
+            inline=True
+        )
+        embed.add_field(
+            name=get_message("basic", "userinfo_joined"),
+            value=member.joined_at.strftime("%d.%m.%Y") if member.joined_at else "Неизвестно",
+            inline=True
+        )
         
         await ctx.reply(embed=embed)
 
     @commands.command(aliases=get_aliases("myid"))
     async def myid(self, ctx):
         """Показывает только твой ID"""
-        await ctx.reply(f"**Твой ID:** `{ctx.author.id}`")
+        await ctx.reply(get_message("basic", "myid", id=ctx.author.id))
 
     @commands.command(aliases=get_aliases("show_aliases"))
     async def show_aliases(self, ctx):
@@ -82,7 +114,7 @@ class Basic(commands.Cog):
         import psutil
         import matplotlib.pyplot as plt
         from io import BytesIO
-        import os  # ← Добавили импорт
+        import os
 
         # ==================== Сбор данных ====================
         process = psutil.Process(os.getpid())
@@ -132,24 +164,45 @@ class Basic(commands.Cog):
 
         # ==================== Embed ====================
         embed = discord.Embed(
-            title="📊 Статистика Mafanya 3.0",
+            title=get_message("basic", "botstat_title"),
             color=0xFF69B4,
             timestamp=datetime.datetime.utcnow()
         )
         embed.set_thumbnail(url=self.bot.user.display_avatar.url)
 
-        embed.add_field(name="⏱ Uptime", value=f"`{uptime}`", inline=False)
-        embed.add_field(name="🏓 Ping", value=f"`{latency} ms`", inline=True)
-        embed.add_field(name="🌍 Серверов", value=f"`{guilds}`", inline=True)
-        embed.add_field(name="👥 Пользователей", value=f"`{users}`", inline=True)
-
-        embed.add_field(name="💻 CPU", value=f"`{cpu_usage:.1f}%`", inline=True)
-        embed.add_field(name="🧠 RAM", 
-                       value=f"`{ram_usage:.1f} / {ram_total:.0f} MB` ({ram_percent:.1f}%)", 
-                       inline=True)
+        embed.add_field(
+            name=get_message("basic", "botstat_uptime"),
+            value=f"`{uptime}`", 
+            inline=False
+        )
+        embed.add_field(
+            name=get_message("basic", "botstat_ping"),
+            value=f"`{latency} ms`", 
+            inline=True
+        )
+        embed.add_field(
+            name=get_message("basic", "botstat_guilds"),
+            value=f"`{guilds}`", 
+            inline=True
+        )
+        embed.add_field(
+            name=get_message("basic", "botstat_users"),
+            value=f"`{users}`", 
+            inline=True
+        )
+        embed.add_field(
+            name=get_message("basic", "botstat_cpu"),
+            value=f"`{cpu_usage:.1f}%`", 
+            inline=True
+        )
+        embed.add_field(
+            name=get_message("basic", "botstat_ram"),
+            value=f"`{ram_usage:.1f} / {ram_total:.0f} MB` ({ram_percent:.1f}%)", 
+            inline=True
+        )
 
         embed.set_image(url="attachment://stats.png")
-        embed.set_footer(text="by Sobrina • Mafanya 3.0")
+        embed.set_footer(text=get_message("basic", "botstat_footer"))
 
         await ctx.send(embed=embed, file=discord.File(buffer, filename="stats.png"))
 

@@ -3,8 +3,8 @@ import discord
 from discord.ext import commands
 import random
 
-# Импорт алиасов
 from utils.aliases import get_aliases
+from utils.module_descriptions import get_message   # ← Главный импорт
 
 
 class Fun(commands.Cog):
@@ -14,27 +14,18 @@ class Fun(commands.Cog):
     @commands.command(aliases=get_aliases("meme"))
     async def meme(self, ctx):
         """Пока заглушка для мемов"""
-        await ctx.send("😔 Мемы пока в разработке... Скоро добавим!")
+        await ctx.send(get_message("fun", "meme_placeholder"))
 
     @commands.command(aliases=get_aliases("eightball"))
     async def eightball(self, ctx, *, question: str = None):
         """Магический шар 8"""
         if not question:
-            return await ctx.send("❓ Задай вопрос магическому шару!")
+            return await ctx.send(get_message("fun", "eightball_no_question"))
         
-        responses = [
-            "Да, определённо ✅",
-            "Нет ❌",
-            "Скорее всего да",
-            "Не уверен...",
-            "Можешь рассчитывать на это",
-            "Лучше не стоит",
-            "Даже не думай",
-            "Конечно! 🔥",
-            "Спроси позже",
-            "Мой ответ — нет"
-        ]
-        await ctx.reply(f"🎱 **{random.choice(responses)}**")
+        responses = get_message("fun", "eightball_responses")
+        response = random.choice(responses)
+        
+        await ctx.reply(get_message("fun", "eightball_answer", response=response))
 
 
 async def setup(bot):

@@ -2,8 +2,8 @@
 import discord
 from discord.ext import commands
 
-# Импорт алиасов
 from utils.aliases import get_aliases
+from utils.module_descriptions import get_message   # ← Главный импорт
 
 
 class Moderation(commands.Cog):
@@ -16,15 +16,16 @@ class Moderation(commands.Cog):
     async def ban(self, ctx, member: discord.Member, *, reason: str = "Без причины"):
         """Забанить участника"""
         if member == ctx.author:
-            return await ctx.send("❌ Нельзя забанить самого себя!")
+            return await ctx.send(get_message("moderation", "ban_self"))
         if member.top_role >= ctx.author.top_role:
-            return await ctx.send("❌ У тебя недостаточно прав для бана этого участника.")
+            return await ctx.send(get_message("moderation", "ban_no_perms"))
 
         try:
             await member.ban(reason=reason)
-            await ctx.send(f"✅ **{member}** был забанен.\nПричина: {reason}")
+            await ctx.send(get_message("moderation", "ban_success", 
+                                     member=member, reason=reason))
         except Exception as e:
-            await ctx.send(f"❌ Не удалось забанить: {e}")
+            await ctx.send(get_message("moderation", "ban_error", error=str(e)))
 
     # ==================== КИК ====================
     @commands.command(aliases=get_aliases("kick"))
@@ -32,15 +33,16 @@ class Moderation(commands.Cog):
     async def kick(self, ctx, member: discord.Member, *, reason: str = "Без причины"):
         """Выгнать участника"""
         if member == ctx.author:
-            return await ctx.send("❌ Нельзя кикнуть самого себя!")
+            return await ctx.send(get_message("moderation", "kick_self"))
         if member.top_role >= ctx.author.top_role:
-            return await ctx.send("❌ У тебя недостаточно прав для кика этого участника.")
+            return await ctx.send(get_message("moderation", "kick_no_perms"))
 
         try:
             await member.kick(reason=reason)
-            await ctx.send(f"✅ **{member}** был кикнут.\nПричина: {reason}")
+            await ctx.send(get_message("moderation", "kick_success", 
+                                     member=member, reason=reason))
         except Exception as e:
-            await ctx.send(f"❌ Не удалось кикнуть: {e}")
+            await ctx.send(get_message("moderation", "kick_error", error=str(e)))
 
     # ==================== МУТ (таймаут) ====================
     @commands.command(aliases=get_aliases("mute"))
@@ -48,16 +50,17 @@ class Moderation(commands.Cog):
     async def mute(self, ctx, member: discord.Member, minutes: int = 10, *, reason: str = "Без причины"):
         """Выдать таймаут (мут) на указанное время"""
         if member == ctx.author:
-            return await ctx.send("❌ Нельзя замутить самого себя!")
+            return await ctx.send(get_message("moderation", "mute_self"))
         if member.top_role >= ctx.author.top_role:
-            return await ctx.send("❌ У тебя недостаточно прав.")
+            return await ctx.send(get_message("moderation", "mute_no_perms"))
 
         try:
             delta = discord.utils.utcnow() + discord.timedelta(minutes=minutes)
             await member.timeout(delta, reason=reason)
-            await ctx.send(f"🔇 **{member}** получил таймаут на **{minutes}** минут.\nПричина: {reason}")
+            await ctx.send(get_message("moderation", "mute_success", 
+                                     member=member, minutes=minutes, reason=reason))
         except Exception as e:
-            await ctx.send(f"❌ Не удалось выдать мут: {e}")
+            await ctx.send(get_message("moderation", "mute_error", error=str(e)))
 
     # ==================== РАЗМУТ ====================
     @commands.command(aliases=get_aliases("unmute"))
@@ -66,9 +69,9 @@ class Moderation(commands.Cog):
         """Снять таймаут"""
         try:
             await member.timeout(None)
-            await ctx.send(f"✅ С {member.mention} снят таймаут.")
+            await ctx.send(get_message("moderation", "unmute_success", member=member.mention))
         except Exception as e:
-            await ctx.send(f"❌ Ошибка: {e}")
+            await ctx.send(get_message("moderation", "unmute_error", error=str(e)))
 
 
 async def setup(bot):

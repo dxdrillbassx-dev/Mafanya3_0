@@ -8,8 +8,8 @@ from py3pin.Pinterest import Pinterest
 from dotenv import load_dotenv
 from datetime import datetime
 
-# Импорт алиасов
 from utils.aliases import get_aliases
+from utils.module_descriptions import get_message   # ← Главный импорт
 
 load_dotenv()
 
@@ -69,7 +69,9 @@ class PinterestCog(commands.Cog):
 
         search_msg = None
         if show_search_message:
-            search_msg = await ctx.send(f"🔍 Ищу новые пины **@{username}**...")
+            search_msg = await ctx.send(
+                get_message("pinterest", "searching", username=username)
+            )
 
         try:
             pins = self.pinterest_client.get_user_pins(
@@ -78,10 +80,11 @@ class PinterestCog(commands.Cog):
             )
 
             if not pins:
+                error_text = get_message("pinterest", "no_pins_found", username=username)
                 if search_msg:
-                    await search_msg.edit(content=f"❌ Пины пользователя **@{username}** не найдены.")
+                    await search_msg.edit(content=error_text)
                 else:
-                    await ctx.send(f"❌ Пины пользователя **@{username}** не найдены.")
+                    await ctx.send(error_text)
                 return
 
             used = self.history.get(username, [])
@@ -92,10 +95,11 @@ class PinterestCog(commands.Cog):
                 available = [p for p in pins if str(p.get('id')) not in self.history.get(username, [])]
 
             if not available:
+                error_text = get_message("pinterest", "all_pins_shown")
                 if search_msg:
-                    await search_msg.edit(content="❌ Все доступные пины уже были показаны.")
+                    await search_msg.edit(content=error_text)
                 else:
-                    await ctx.send("❌ Все доступные пины уже были показаны.")
+                    await ctx.send(error_text)
                 return
 
             pin = random.choice(available)
@@ -119,19 +123,23 @@ class PinterestCog(commands.Cog):
             requester = ctx.author.display_name or ctx.author.name
 
             embed = discord.Embed(
-                title="📌 Pinterest", 
+                title=get_message("pinterest", "embed_title"), 
                 color=0xFF69B4,
                 url=f"https://www.pinterest.com/{username}/"
             )
             embed.set_image(url=image_url)
-            embed.set_footer(text=f"Запросил: {requester} • Сегодня, в {time_str}")
+            embed.set_footer(
+                text=get_message("pinterest", "footer", 
+                               requester=requester, 
+                               time_str=time_str)
+            )
 
             await ctx.send(embed=embed)
             self.add_to_history(username, pin_id)
 
         except Exception as e:
             print(f"Pinterest error for @{username}: {e}")
-            error_text = "❌ Ошибка при получении пинов."
+            error_text = get_message("pinterest", "error")
             if search_msg:
                 try:
                     await search_msg.edit(content=error_text)

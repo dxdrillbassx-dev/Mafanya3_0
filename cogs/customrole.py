@@ -7,8 +7,8 @@ import os
 import re
 from datetime import datetime
 
-# Импорт алиасов
 from utils.aliases import get_aliases
+from utils.module_descriptions import get_message   # ← Главный импорт для сообщений
 
 DATA_FILE = "data/custom_roles.json"
 
@@ -30,13 +30,32 @@ def save_roles(data):
 
 
 # ====================== МОДАЛКА СОЗДАНИЯ ======================
-class CustomRoleModal(Modal, title="Создать личную роль"):
+class CustomRoleModal(Modal, title=get_message("customrole", "create_modal_title")):
     def __init__(self):
         super().__init__(timeout=None)
-        self.role_name = TextInput(label="Название роли", placeholder="Не ITшник", required=True, max_length=80)
-        self.icon_url = TextInput(label="Ссылка на иконку (опционально)", placeholder="https://...", required=False)
-        self.color = TextInput(label="Цвет в HEX", placeholder="#FF69B4", required=True, max_length=7)
-        self.hoist = TextInput(label="Выделять в списке? (да/нет)", placeholder="да", required=True, max_length=3)
+        self.role_name = TextInput(
+            label=get_message("customrole", "create_name_label"),
+            placeholder="Не ITшник",
+            required=True,
+            max_length=80
+        )
+        self.icon_url = TextInput(
+            label=get_message("customrole", "create_icon_label"),
+            placeholder="https://...",
+            required=False
+        )
+        self.color = TextInput(
+            label=get_message("customrole", "create_color_label"),
+            placeholder="#FF69B4",
+            required=True,
+            max_length=7
+        )
+        self.hoist = TextInput(
+            label=get_message("customrole", "create_hoist_label"),
+            placeholder="да",
+            required=True,
+            max_length=3
+        )
         
         self.add_item(self.role_name)
         self.add_item(self.icon_url)
@@ -48,7 +67,10 @@ class CustomRoleModal(Modal, title="Создать личную роль"):
         
         color_hex = self.color.value.strip()
         if not re.match(r'^#?[0-9a-fA-F]{6}$', color_hex):
-            return await interaction.followup.send("❌ Неверный HEX цвет!", ephemeral=True)
+            return await interaction.followup.send(
+                get_message("customrole", "invalid_hex"), 
+                ephemeral=True
+            )
         
         color = discord.Color(int(color_hex.strip('#'), 16))
         hoist = self.hoist.value.lower() in ['да', 'yes', '1', 'true']
@@ -72,25 +94,34 @@ class CustomRoleModal(Modal, title="Создать личную роль"):
             }
             save_roles(data)
 
-            embed = discord.Embed(title="✅ Личная роль создана!", color=color)
-            embed.add_field(name="Роль", value=role.mention)
+            embed = discord.Embed(
+                title=get_message("customrole", "role_created_title"), 
+                color=color
+            )
+            embed.add_field(
+                name=get_message("customrole", "role_created_field"),
+                value=role.mention
+            )
             await interaction.followup.send(embed=embed, ephemeral=False)
         except Exception as e:
-            await interaction.followup.send(f"❌ Ошибка: {e}", ephemeral=True)
+            await interaction.followup.send(
+                get_message("errors", "bot_error", text=str(e)), 
+                ephemeral=True
+            )
 
 
 # ====================== МОДАЛКА УДАЛЕНИЯ ======================
-class DeleteRoleModal(Modal, title="Удалить личную роль"):
+class DeleteRoleModal(Modal, title=get_message("customrole", "delete_modal_title")):
     def __init__(self):
         super().__init__(timeout=None)
         self.role_id = TextInput(
-            label="ID роли для удаления",
+            label=get_message("customrole", "delete_id_label"),
             placeholder="Вставь ID роли сюда",
             required=True,
             max_length=20
         )
         self.reason = TextInput(
-            label="Причина удаления",
+            label=get_message("customrole", "delete_reason_label"),
             placeholder="Не нужна / нарушение / и т.д.",
             required=False,
             style=discord.TextStyle.short
@@ -106,7 +137,10 @@ class DeleteRoleModal(Modal, title="Удалить личную роль"):
             role = interaction.guild.get_role(role_id)
             
             if not role:
-                return await interaction.followup.send("❌ Роль с таким ID не найдена.", ephemeral=True)
+                return await interaction.followup.send(
+                    get_message("customrole", "role_not_found"), 
+                    ephemeral=True
+                )
             
             role_name = role.name
             await role.delete(reason=self.reason.value or f"Удалено админом {interaction.user}")
@@ -116,12 +150,21 @@ class DeleteRoleModal(Modal, title="Удалить личную роль"):
                 del data[str(role_id)]
                 save_roles(data)
             
-            await interaction.followup.send(f"✅ Роль **{role_name}** успешно удалена!", ephemeral=False)
+            await interaction.followup.send(
+                get_message("customrole", "role_deleted", role_name=role_name), 
+                ephemeral=False
+            )
             
         except ValueError:
-            await interaction.followup.send("❌ ID должен состоять только из цифр.", ephemeral=True)
+            await interaction.followup.send(
+                get_message("customrole", "invalid_id"), 
+                ephemeral=True
+            )
         except Exception as e:
-            await interaction.followup.send(f"❌ Ошибка: {e}", ephemeral=True)
+            await interaction.followup.send(
+                get_message("errors", "bot_error", text=str(e)), 
+                ephemeral=True
+            )
 
 
 # ====================== COG ======================
@@ -132,14 +175,20 @@ class CustomRoleCog(commands.Cog):
     @commands.command(aliases=get_aliases("createrole"))
     async def createrole(self, ctx):
         """Создать личную роль"""
-        embed = discord.Embed(title="✨ Создать личную роль", description="Нажми кнопку ниже", color=0xFF69B4)
+        embed = discord.Embed(
+            title=get_message("customrole", "createrole_title"),
+            description=get_message("customrole", "createrole_description"),
+            color=0xFF69B4
+        )
         view = View(timeout=None)
         btn = Button(label="Создать роль", style=discord.ButtonStyle.primary, emoji="✨")
         btn.callback = lambda i: i.response.send_modal(CustomRoleModal())
         view.add_item(btn)
         await ctx.send(embed=embed, view=view)
-        try: await ctx.message.delete()
-        except: pass
+        try: 
+            await ctx.message.delete()
+        except: 
+            pass
 
     @commands.command(aliases=get_aliases("listcustomroles"))
     @commands.has_permissions(administrator=True)
@@ -147,10 +196,13 @@ class CustomRoleCog(commands.Cog):
         """Список личных ролей + удаление"""
         data = load_roles()
         if not data:
-            return await ctx.send("Пока нет созданных личных ролей.")
+            return await ctx.send(get_message("customrole", "listroles_no_roles"))
 
-        embed = discord.Embed(title="🗑️ Личные роли сервера", color=0xFF0000)
-        embed.description = "Скопируй ID роли и вставь в форму ниже:\n\n"
+        embed = discord.Embed(
+            title=get_message("customrole", "listroles_title"), 
+            color=0xFF0000
+        )
+        embed.description = get_message("customrole", "listroles_description")
         
         for role_id, info in data.items():
             embed.description += f"`{role_id}` → **{info['name']}** (владелец: <@{info['owner']}>\n"

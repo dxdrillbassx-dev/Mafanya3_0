@@ -1,3 +1,4 @@
+# cogs/forza.py
 import discord
 from discord.ext import commands
 import socket
@@ -8,6 +9,7 @@ import json
 from datetime import datetime
 
 from utils.aliases import get_aliases
+from utils.module_descriptions import get_message   # ← Главный импорт
 
 
 class ForzaTelemetry(commands.Cog):
@@ -37,12 +39,12 @@ class ForzaTelemetry(commands.Cog):
                         ordinal = int(k)
                         name = v if isinstance(v, str) else v.get("name", f"ID {ordinal}")
                         cars[ordinal] = {"name": name}
-                print(f"✅ Загружено {len(cars)} машин из JSON")
+                print(get_message("forza", "cars_loaded", count=len(cars)))
                 return cars
-            print("⚠️ data/forza_cars.json не найден")
+            print(get_message("forza", "cars_not_found"))
             return {}
         except Exception as e:
-            print(f"[Forza] Ошибка загрузки JSON: {e}")
+            print(get_message("forza", "listener_error", error=str(e)))
             return {}
 
     def get_car_info(self, ordinal: int):
@@ -60,7 +62,6 @@ class ForzaTelemetry(commands.Cog):
                 "CurrentEngineRpm": struct.unpack("<f", packet[16:20])[0],
                 "EngineMaxRpm": struct.unpack("<f", packet[8:12])[0],
 
-                # Скорость — лучше брать готовое поле
                 "Speed": round(struct.unpack("<f", packet[256:260])[0] * 3.6, 1),
 
                 "Accel": struct.unpack("<B", packet[315:316])[0],
@@ -69,7 +70,6 @@ class ForzaTelemetry(commands.Cog):
                 "Steer": struct.unpack("<b", packet[320:321])[0],
             }
 
-            # Защита от мусора
             if data["Accel"] > 100: data["Accel"] = 0
             if data["Brake"] > 100: data["Brake"] = 0
             if data["Gear"] > 10: data["Gear"] = 0
@@ -86,7 +86,7 @@ class ForzaTelemetry(commands.Cog):
         car = self.get_car_info(d.get("CarOrdinal", 0))
 
         embed = discord.Embed(
-            title="🏎️ Forza Horizon 6 — Live Dashboard",
+            title=get_message("forza", "dashboard_title"),
             description=f"**{car['name']}**",
             color=0x00FF88,
             timestamp=datetime.utcnow()
@@ -97,15 +97,39 @@ class ForzaTelemetry(commands.Cog):
         rpm_percent = min(100, int((rpm / rpm_max) * 100))
         gear = d["Gear"] if d.get("Gear", 0) > 0 else "N"
 
-        embed.add_field(name="Скорость", value=f"**{d['Speed']} км/ч**", inline=True)
-        embed.add_field(name="Обороты", value=f"`{rpm} RPM` ({rpm_percent}%)", inline=True)
-        embed.add_field(name="Передача", value=f"**{gear}**", inline=True)
+        embed.add_field(
+            name=get_message("forza", "speed_field"),
+            value=f"**{d['Speed']} км/ч**", 
+            inline=True
+        )
+        embed.add_field(
+            name=get_message("forza", "rpm_field"),
+            value=f"`{rpm} RPM` ({rpm_percent}%)", 
+            inline=True
+        )
+        embed.add_field(
+            name=get_message("forza", "gear_field"),
+            value=f"**{gear}**", 
+            inline=True
+        )
 
-        embed.add_field(name="Газ", value=f"`{d.get('Accel', 0)}%`", inline=True)
-        embed.add_field(name="Тормоз", value=f"`{d.get('Brake', 0)}%`", inline=True)
-        embed.add_field(name="Руль", value=f"`{d.get('Steer', 0)}`", inline=True)
+        embed.add_field(
+            name=get_message("forza", "accel_field"),
+            value=f"`{d.get('Accel', 0)}%`", 
+            inline=True
+        )
+        embed.add_field(
+            name=get_message("forza", "brake_field"),
+            value=f"`{d.get('Brake', 0)}%`", 
+            inline=True
+        )
+        embed.add_field(
+            name=get_message("forza", "steer_field"),
+            value=f"`{d.get('Steer', 0)}`", 
+            inline=True
+        )
 
-        embed.set_footer(text="Обновляется в реальном времени • FH6")
+        embed.set_footer(text=get_message("forza", "dashboard_footer"))
 
         try:
             await self.message_to_edit.edit(embed=embed)
@@ -118,9 +142,9 @@ class ForzaTelemetry(commands.Cog):
 
         try:
             self.sock.bind(("0.0.0.0", self.udp_port))
-            print("✅ Forza Horizon 6 UDP Listener запущен")
+            print(get_message("forza", "listener_started"))
         except Exception as e:
-            print(f"❌ Forza UDP ошибка: {e}")
+            print(get_message("forza", "listener_error", error=str(e)))
             return
 
         self.running = True
@@ -133,9 +157,10 @@ class ForzaTelemetry(commands.Cog):
                 if data and data.get("IsRaceOn") == 1:
                     current_ordinal = data.get("CarOrdinal")
 
-                    # Смена машины
                     if self.last_car_ordinal is not None and self.last_car_ordinal != current_ordinal:
-                        asyncio.run_coroutine_threadsafe(self.send_car_change(current_ordinal), self.bot.loop)
+                        asyncio.run_coroutine_threadsafe(
+                            self.send_car_change(current_ordinal), self.bot.loop
+                        )
 
                     self.last_data = data
                     self.last_car_ordinal = current_ordinal
@@ -148,7 +173,7 @@ class ForzaTelemetry(commands.Cog):
     async def send_car_change(self, ordinal: int):
         car = self.get_car_info(ordinal)
         embed = discord.Embed(
-            title="🚗 Смена автомобиля",
+            title=get_message("forza", "car_change_title"),
             description=f"**{car['name']}**",
             color=0x00FF88,
             timestamp=datetime.utcnow()
@@ -161,32 +186,36 @@ class ForzaTelemetry(commands.Cog):
     async def forza_status(self, ctx):
         if self.listener_task and not self.listener_task.done():
             self.running = False
-            if self.sock: self.sock.close()
+            if self.sock: 
+                self.sock.close()
             self.listener_task = None
             self.message_to_edit = None
-            await ctx.reply("❌ Forza listener остановлен.")
+            await ctx.reply(get_message("forza", "listener_stopped"))
         else:
             self.listener_task = asyncio.create_task(asyncio.to_thread(self.udp_listener))
-            await ctx.reply("✅ Forza Horizon 6 listener запущен!\n`!forzadash` — дашборд")
+            await ctx.reply(get_message("forza", "listener_started_command"))
 
     @commands.command(aliases=get_aliases("forzaprofile"))
     async def forzaprofile(self, ctx):
         if not self.listener_task or self.listener_task.done():
-            await ctx.reply("❌ Сначала запусти `!forza`")
+            await ctx.reply(get_message("forza", "listener_not_running"))
             return
+        
         embed = discord.Embed(
-            title="🏎️ Forza Horizon 6 Live Dashboard",
-            description="Ожидание данных...\nНачни ехать.",
+            title=get_message("forza", "forzaprofile_title"),
+            description=get_message("forza", "forzaprofile_waiting"),
             color=0xFFAA00
         )
         self.message_to_edit = await ctx.reply(embed=embed)
 
     async def cog_unload(self):
         self.running = False
-        if self.sock: self.sock.close()
-        if self.listener_task: self.listener_task.cancel()
+        if self.sock: 
+            self.sock.close()
+        if self.listener_task: 
+            self.listener_task.cancel()
 
 
 async def setup(bot):
     await bot.add_cog(ForzaTelemetry(bot))
-    print("✅ Forza Horizon 6 cog загружен")
+    print(get_message("forza", "cog_loaded"))

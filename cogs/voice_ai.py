@@ -7,7 +7,9 @@ import random
 import re
 import torch
 import soundfile as sf
+
 from utils.aliases import get_aliases
+from utils.module_descriptions import get_message   # ← Главный импорт
 
 
 class VoiceAI(commands.Cog):
@@ -19,19 +21,19 @@ class VoiceAI(commands.Cog):
         self.temp_dir = "temp_tts"
         os.makedirs(self.temp_dir, exist_ok=True)
 
-        # Загрузка Silero (самый качественный русский TTS)
+        # Загрузка Silero
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        print(f"🔥 Silero TTS загружается на: {self.device}")
+        print(get_message("voice_ai", "silero_loading", device=self.device))
 
         # Загружаем модель
         self.model, self.example_text = torch.hub.load(
             repo_or_dir='snakers4/silero-models',
             model='silero_tts',
             language='ru',
-            speaker='v4_ru'          # новая модель
+            speaker='v4_ru'
         )
         self.model.to(self.device)
-        print("✅ Silero TTS успешно загружен! (очень живой голос)")
+        print(get_message("voice_ai", "silero_loaded"))
 
     def clean_text_for_tts(self, text: str) -> str:
         """Очистка текста"""
@@ -52,16 +54,18 @@ class VoiceAI(commands.Cog):
     @commands.command(aliases=get_aliases("join_voice"))
     async def join_voice(self, ctx):
         if not ctx.author.voice:
-            return await ctx.send("❌ Ты должен быть в голосовом канале!")
+            return await ctx.send(get_message("voice_ai", "not_in_voice"))
 
         try:
             self.voice_client = await ctx.author.voice.channel.connect()
             self.current_channel = ctx.channel
-            await ctx.send(f"✅ **Мафаня зашла в войс** — `{ctx.author.voice.channel.name}`")
+            await ctx.send(
+                get_message("voice_ai", "join_success", channel=ctx.author.voice.channel.name)
+            )
             await asyncio.sleep(0.5)
-            await self.say("Приветики! Я теперь с вами")
+            await self.say(get_message("voice_ai", "join_greeting"))
         except Exception as e:
-            await ctx.send(f"❌ Не получилось зайти: {e}")
+            await ctx.send(get_message("voice_ai", "join_error", error=str(e)))
 
     @commands.command(aliases=get_aliases("leave_voice"))
     async def leave_voice(self, ctx):
@@ -69,9 +73,9 @@ class VoiceAI(commands.Cog):
             await self.voice_client.disconnect()
             self.voice_client = None
             self.current_channel = None
-            await ctx.send("👋 **Мафаня вышла из войса**")
+            await ctx.send(get_message("voice_ai", "leave_success"))
         else:
-            await ctx.send("Я и так не в войсе.")
+            await ctx.send(get_message("voice_ai", "not_in_voice_leave"))
 
     # ====================== ОЗВУЧКА ======================
     async def say(self, text: str):
@@ -84,16 +88,14 @@ class VoiceAI(commands.Cog):
 
             filename = f"{self.temp_dir}/mafanya_{random.randint(10000,99999)}.wav"
 
-            # Генерация речи
             audio = self.model.apply_tts(
                 text=clean_text[:450],
-                speaker="baya",        # самый живой женский голос
+                speaker="baya",
                 sample_rate=48000,
                 put_accent=True,
                 put_yo=True
             )
 
-            # Сохранение
             sf.write(filename, audio.numpy(), 48000)
 
             if self.voice_client.is_playing():
@@ -107,7 +109,10 @@ class VoiceAI(commands.Cog):
         except Exception as e:
             print(f"[TTS] Ошибка: {e}")
             if self.current_channel:
-                await self.current_channel.send("❌ Не получилось сказать...", delete_after=5)
+                await self.current_channel.send(
+                    get_message("voice_ai", "tts_error"), 
+                    delete_after=5
+                )
         finally:
             self.is_speaking = False
 
@@ -145,7 +150,7 @@ class VoiceAI(commands.Cog):
                 return await gemini.ask_gemini(self.current_channel.id, text)
             except:
                 pass
-        return random.choice(["Ммм?", "Да?", "Слушаю тебя", "Что такое?"])
+        return random.choice(get_message("voice_ai", "ai_fallback"))
 
 
 async def setup(bot):

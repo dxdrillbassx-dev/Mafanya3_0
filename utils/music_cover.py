@@ -6,6 +6,8 @@ import random
 import textwrap
 import os
 
+from utils.module_descriptions import get_message   # ← Главный импорт
+
 
 class MusicCoverGenerator:
     def __init__(self):
@@ -15,14 +17,14 @@ class MusicCoverGenerator:
     def get_random_background(self):
         """Выбирает случайный фон из папки backgrounds"""
         if not os.path.exists(self.backgrounds_dir):
-            print(f"⚠️ Папка {self.backgrounds_dir} не найдена")
+            print(get_message("music_cover", "backgrounds_not_found"))
             return None
         
         valid = ('.jpg', '.jpeg', '.png', '.webp')
         images = [f for f in os.listdir(self.backgrounds_dir) if f.lower().endswith(valid)]
         
         if not images:
-            print("⚠️ В папке backgrounds нет изображений")
+            print(get_message("music_cover", "no_backgrounds"))
             return None
             
         return os.path.join(self.backgrounds_dir, random.choice(images))
@@ -40,7 +42,7 @@ class MusicCoverGenerator:
                 overlay = Image.new("RGB", (width, height), (0, 0, 0))
                 img = Image.blend(blurred, overlay, alpha=0.65)
             except Exception as e:
-                print(f"[Cover] Ошибка загрузки фона: {e}")
+                print(get_message("music_cover", "backgrounds_not_found"))
                 img = Image.new("RGB", (width, height), (15, 15, 22))
         else:
             img = Image.new("RGB", (width, height), (15, 15, 22))
@@ -53,7 +55,7 @@ class MusicCoverGenerator:
             name_font = ImageFont.truetype(self.font_path, 48)
             footer_font = ImageFont.truetype(self.font_path, 34)
         except:
-            print("⚠️ Шрифт Blackentina4F.ttf не найден, используется стандартный")
+            print(get_message("music_cover", "font_not_found"))
             title_font = ImageFont.load_default()
             name_font = ImageFont.load_default()
             footer_font = ImageFont.load_default()
@@ -115,7 +117,7 @@ class MusicCoverGenerator:
                 img.paste(border, (paste_x - 7, avatar_y - 7), border)
                 img.paste(avatar, (paste_x, avatar_y), avatar)
             except Exception as e:
-                print(f"[Cover] Ошибка аватарки: {e}")
+                print(get_message("music_cover", "avatar_error", error=str(e)))
 
         # Никнейм
         requester_text = f"Запросил: {requester}"

@@ -3,8 +3,8 @@ import discord
 from discord.ext import commands
 from launcher.structure import get_project_structure
 
-# Импорт алиасов
 from utils.aliases import get_aliases
+from utils.module_descriptions import get_message   # ← Главный импорт
 
 
 class ProjectStructure(commands.Cog):
@@ -20,11 +20,13 @@ class ProjectStructure(commands.Cog):
             pass
 
         embed = discord.Embed(
-            title="📁 Структура проекта Mafanya 3.0",
+            title=get_message("structure", "embed_title"),
             description=get_project_structure(),
             color=0xFF69B4
         )
-        embed.set_footer(text=f"Запросил: {ctx.author}")
+        embed.set_footer(
+            text=get_message("structure", "footer", author=ctx.author)
+        )
         
         await ctx.send(embed=embed)
 

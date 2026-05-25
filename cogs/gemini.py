@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import random
 
 from utils.aliases import get_aliases
+from utils.module_descriptions import get_message   # ← Главный импорт
 
 
 class Gemini(commands.Cog):
@@ -27,11 +28,11 @@ class Gemini(commands.Cog):
 
         if self.api_key:
             self.client = genai.Client(api_key=self.api_key)
-            self.model = "gemini-2.5-flash"   # Самая стабильная на данный момент
-            print(f"✅ [Мафаня] Gemini загружена (модель: {self.model})")
+            self.model = "gemini-2.5-flash"
+            print(get_message("gemini", "loaded", model=self.model))
             bot.loop.create_task(self.proactive_task())
         else:
-            print("❌ [Мафаня] GEMINI_API_KEY не найден!")
+            print(get_message("gemini", "api_key_missing"))
 
     async def ensure_pinterest_cog(self):
         if self.pinterest_cog is None:
@@ -71,7 +72,7 @@ class Gemini(commands.Cog):
         await message.channel.typing()
         pinterest_cog = await self.ensure_pinterest_cog()
         if not pinterest_cog:
-            await message.reply("❌ Модуль Pinterest сейчас недоступен.")
+            await message.reply(get_message("gemini", "pinterest_unavailable"))
             return
 
         try:
@@ -79,7 +80,7 @@ class Gemini(commands.Cog):
             await pinterest_cog.send_random_pin(ctx, show_search_message=False)
         except Exception as e:
             self.log(f"❌ Ошибка Pinterest: {e}")
-            await message.reply("Не получилось достать пины 😩")
+            await message.reply(get_message("gemini", "pinterest_error"))
 
     # ====================== ОСНОВНОЙ ЗАПРОС ======================
     async def ask_gemini(self, channel_id, user_message: str, retry: int = 0):
@@ -100,7 +101,7 @@ class Gemini(commands.Cog):
             for msg in history:
                 role = "model" if msg["role"] == "assistant" else "user"
                 contents.append({"role": role, "parts": [{"text": msg["content"]}]})
-            
+
             contents.append({"role": "user", "parts": [{"text": user_message}]})
 
             response = await asyncio.to_thread(
@@ -112,7 +113,6 @@ class Gemini(commands.Cog):
             
             reply = response.text.strip()
 
-            # Улучшенная обрезка
             if len(reply) > 280:
                 last_dot = reply[:280].rfind('.')
                 if last_dot > 80:
@@ -134,13 +134,9 @@ class Gemini(commands.Cog):
                 return await self.ask_gemini(channel_id, user_message, retry + 1)
 
             if "404" in error_str or "not found" in error_str:
-                return "Блять, модель Gemini опять обновили..."
+                return get_message("gemini", "model_updated")
 
-            return random.choice([
-                "Бляяять, я опять зависла...",
-                "Серверы Google в ахуе, ща...",
-                "Пиздец, ИИ лег, попробуй ещё раз 😩"
-            ])
+            return random.choice(get_message("gemini", "gemini_error_fallback"))
 
     # ====================== ОБРАБОТКА СООБЩЕНИЙ ======================
     @commands.Cog.listener()
@@ -151,13 +147,11 @@ class Gemini(commands.Cog):
         channel_id = message.channel.id
         content = message.content.strip()
 
-        # Приоритет Pinterest
         if self.is_pinterest_request(content):
             self.active_chats[channel_id] = datetime.now()
             await self.handle_pinterest_request(message)
             return
 
-        # Активация Мафани
         is_activated = any(word in content.lower() for word in ["мафаня", "мафанья", "мафуня", "маф"]) or \
                       (channel_id in self.active_chats and 
                        (datetime.now() - self.active_chats[channel_id]) < timedelta(seconds=self.conversation_timeout))
@@ -170,7 +164,6 @@ class Gemini(commands.Cog):
 
         response = await self.ask_gemini(channel_id, content)
 
-        # Если Мафаня в голосовом канале — говорим голосом
         voice_ai = await self.ensure_voice_ai()
         if (voice_ai and 
             voice_ai.voice_client and 
@@ -184,7 +177,7 @@ class Gemini(commands.Cog):
     # ====================== ПРОАКТИВНЫЕ СООБЩЕНИЯ ======================
     async def proactive_task(self):
         await self.bot.wait_until_ready()
-        self.log("🔄 Фоновая задача запущена")
+        self.log(get_message("gemini", "proactive_task_started"))
 
         while True:
             await asyncio.sleep(25)
@@ -196,12 +189,7 @@ class Gemini(commands.Cog):
                         channel = self.bot.get_channel(channel_id)
                         if channel:
                             self.active_chats[channel_id] = now
-                            phrases = [
-                                "Ну где ты блять? Скучнооо 🥺",
-                                "Эй сука, ты меня забыл? ❤️",
-                                "Я тут уже заебалась ждать...",
-                                "Аууууу, напиши мне 😩"
-                            ]
+                            phrases = get_message("gemini", "proactive_phrases")
                             await channel.send(random.choice(phrases))
                     except:
                         pass

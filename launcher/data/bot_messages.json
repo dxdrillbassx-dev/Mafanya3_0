@@ -1,0 +1,384 @@
+{
+  "templates": {
+    "error": [
+      "❌ {text}"
+    ],
+    "success": "✅ {text}",
+    "warning": "⚠️ {text}",
+    "info": "ℹ️ {text}"
+  },
+  "funny_responses": [
+    "Хуйню какую-то пишешь, братан 😂",
+    "..."
+  ],
+  "welcome": {
+    "message": "🎉 **{member}** присоединился к серверу! Добро пожаловать!",
+    "dm_message": "Привет! Добро пожаловать на сервер."
+  },
+  "errors": {
+    "command_not_found": "Команда не найдена",
+    "missing_arguments": "Не хватает аргументов команды",
+    "no_permissions": "У тебя недостаточно прав",
+    "maintenance": "Бот находится на техническом обслуживании",
+    "bot_error": "Произошла ошибка при выполнении команды",
+    "role_give_failed": "Не удалось выдать роль"
+  },
+  "logs": {
+    "bot_ready": "Бот готов. Серверов: {guilds}",
+    "role_given": "Выдал роль **{role}** → {member} (`{id}`)",
+    "member_leave": "{member} (`{id}`) покинул сервер",
+    "voice_join": "{member} зашёл в **{channel}**",
+    "voice_leave": "{member} вышел из голосового канала"
+  },
+  "status": {
+    "bot_started": "✅ Бот успешно запущен",
+    "bot_stopped": "⛔ Бот остановлен",
+    "modules_loaded": "Загружено модулей: {success}/{total}"
+  },
+  "on_command": {
+    "deleted": "Сообщение с командой удалено"
+  },
+
+  "basic": {
+    "ping": "🏓 Понг! Задержка: `{latency}ms`",
+    "hello": "Привет, {member}! 👋",
+    "about_title": "📌 Mafanya 3.0",
+    "about_description": "Современный Discord бот с музыкой, ИИ и личными ролями.",
+    "about_prefix": "Префикс",
+    "about_prefix_value": "`!`",
+    "about_commands": "Команды",
+    "about_commands_value": "`!help` или `!меню`",
+    "about_footer": "by Sobrina",
+    "clear_success": "🧹 Удалено **{amount}** сообщений!",
+    "userinfo_title": "🆔 Информация о пользователе",
+    "userinfo_name": "Имя",
+    "userinfo_id": "ID",
+    "userinfo_mention": "Упоминание",
+    "userinfo_created": "Аккаунт создан",
+    "userinfo_joined": "Присоединился к серверу",
+    "myid": "**Твой ID:** `{id}`",
+    "botstat_title": "📊 Статистика Mafanya 3.0",
+    "botstat_uptime": "⏱ Uptime",
+    "botstat_ping": "🏓 Ping",
+    "botstat_guilds": "🌍 Серверов",
+    "botstat_users": "👥 Пользователей",
+    "botstat_cpu": "💻 CPU",
+    "botstat_ram": "🧠 RAM",
+    "botstat_footer": "by Sobrina • Mafanya 3.0"
+  },
+
+    "customrole": {
+    "create_modal_title": "Создать личную роль",
+    "create_name_label": "Название роли",
+    "create_icon_label": "Ссылка на иконку (опционально)",
+    "create_color_label": "Цвет в HEX",
+    "create_hoist_label": "Выделять в списке? (да/нет)",
+    
+    "invalid_hex": "❌ Неверный HEX цвет!",
+    "role_created_title": "✅ Личная роль создана!",
+    "role_created_field": "Роль",
+
+    "delete_modal_title": "Удалить личную роль",
+    "delete_id_label": "ID роли для удаления",
+    "delete_reason_label": "Причина удаления",
+
+    "role_not_found": "❌ Роль с таким ID не найдена.",
+    "invalid_id": "❌ ID должен состоять только из цифр.",
+    "role_deleted": "✅ Роль **{role_name}** успешно удалена!",
+
+    "createrole_title": "✨ Создать личную роль",
+    "createrole_description": "Нажми кнопку ниже",
+
+    "listroles_title": "🗑️ Личные роли сервера",
+    "listroles_no_roles": "Пока нет созданных личных ролей.",
+    "listroles_description": "Скопируй ID роли и вставь в форму ниже:\n\n"
+  },
+
+    "forza": {
+    "cars_loaded": "✅ Загружено {count} машин из JSON",
+    "cars_not_found": "⚠️ data/forza_cars.json не найден",
+    "listener_started": "✅ Forza Horizon 6 UDP Listener запущен",
+    "listener_error": "❌ Forza UDP ошибка: {error}",
+
+    "dashboard_title": "🏎️ Forza Horizon 6 — Live Dashboard",
+    "speed_field": "Скорость",
+    "rpm_field": "Обороты",
+    "gear_field": "Передача",
+    "accel_field": "Газ",
+    "brake_field": "Тормоз",
+    "steer_field": "Руль",
+    "dashboard_footer": "Обновляется в реальном времени • FH6",
+
+    "car_change_title": "🚗 Смена автомобиля",
+
+    "listener_stopped": "❌ Forza listener остановлен.",
+    "listener_started_command": "✅ Forza Horizon 6 listener запущен!\n`!forzadash` — дашборд",
+    "listener_not_running": "❌ Сначала запусти `!forza`",
+
+    "forzaprofile_title": "🏎️ Forza Horizon 6 Live Dashboard",
+    "forzaprofile_waiting": "Ожидание данных...\nНачни ехать.",
+
+    "cog_loaded": "✅ Forza Horizon 6 cog загружен"
+  },
+
+    "fun": {
+    "meme_placeholder": "😔 Мемы пока в разработке... Скоро добавим!",
+    "eightball_no_question": "❓ Задай вопрос магическому шару!",
+    "eightball_responses": [
+      "Да, определённо ✅",
+      "Нет ❌",
+      "Скорее всего да",
+      "Не уверен...",
+      "Можешь рассчитывать на это",
+      "Лучше не стоит",
+      "Даже не думай",
+      "Конечно! 🔥",
+      "Спроси позже",
+      "Мой ответ — нет"
+    ],
+    "eightball_answer": "🎱 **{response}**"
+  },
+
+    "gemini": {
+    "loaded": "✅ [Мафаня] Gemini загружена (модель: {model})",
+    "api_key_missing": "❌ [Мафаня] GEMINI_API_KEY не найден!",
+    
+    "pinterest_unavailable": "❌ Модуль Pinterest сейчас недоступен.",
+    "pinterest_error": "Не получилось достать пины 😩",
+
+    "gemini_error_fallback": [
+      "Бляяять, я опять зависла...",
+      "Серверы Google в ахуе, ща...",
+      "Пиздец, ИИ лег, попробуй ещё раз 😩"
+    ],
+    "model_updated": "Блять, модель Gemini опять обновили...",
+
+    "proactive_phrases": [
+      "Ну где ты блять? Скучнооо 🥺",
+      "Эй сука, ты меня забыл? ❤️",
+      "Я тут уже заебалась ждать...",
+      "Аууууу, напиши мне 😩"
+    ],
+
+    "proactive_task_started": "🔄 Фоновая задача запущена"
+  },
+
+    "helpimage": {
+    "menu_title": "📋 Меню команд Мафани",
+    
+    "music_section": "🎵 МУЗЫКА",
+    "music_cmds": [
+      "!play <ссылка> — включить трек",
+      "!skip — пропустить",
+      "!pause / !resume — пауза / продолжить",
+      "!queue — очередь (пока нет)",
+      "!leave — отключить бота"
+    ],
+
+    "roles_section": "🎭 ЛИЧНЫЕ РОЛИ",
+    "roles_cmds": [
+      "!createrole / !личная — создать свою роль",
+      "!личные — список и удаление (только админы)"
+    ],
+
+    "ai_section": "🧠 МАФАНЯ ИИ",
+    "ai_cmds": [
+      "Напиши «мафаня» + сообщение",
+      "Общается ~2 минуты",
+      "Дерзкая и с характером 😈"
+    ],
+
+    "pinterest_section": "📌 ПИНТЕРЕСТ",
+    "pinterest_cmds": [
+      "!pin — случайный пин",
+      "!pin @username — пины пользователя"
+    ],
+
+    "footer_left": "Mafanya 3.0 • 2026",
+    "footer_right": "by Sobrina"
+  },
+
+    "maintenance": {
+    "full_active": "🚨 **ПОЛНЫЙ ТЕХРЕЖИМ** активен (выключается только через лаунчер)",
+    "partial_active": "🟡 Техрежим включён (кроме владельца)",
+    "disabled": "🟢 Техрежим выключен",
+
+    "full_enabled": "🚨 **ПОЛНЫЙ ТЕХРЕЖИМ ВКЛЮЧЁН**\nТеперь **никто** не может использовать команды.",
+    "partial_enabled": "🟡 **Техрежим включён** (все кроме тебя)",
+    "full_cannot_disable": "❌ Полный техрежим можно выключить **только через лаунчер**.",
+    "disabled_success": "🟢 Техрежим выключен",
+
+    "help": "`!tech` — статус\n`!tech on` — кроме owner\n`!tech all` — полный",
+
+    "log_full": "🚨 Полный техрежим включён",
+    "log_partial": "🟡 Обычный техрежим включён",
+    "log_disabled": "🟢 Техрежим выключен",
+
+    "cog_loaded": "✅ Maintenance cog загружен с partial/full режимом"
+  },
+
+    "moderation": {
+    "ban_self": "❌ Нельзя забанить самого себя!",
+    "ban_no_perms": "❌ У тебя недостаточно прав для бана этого участника.",
+    "ban_success": "✅ **{member}** был забанен.\nПричина: {reason}",
+    "ban_error": "❌ Не удалось забанить: {error}",
+
+    "kick_self": "❌ Нельзя кикнуть самого себя!",
+    "kick_no_perms": "❌ У тебя недостаточно прав для кика этого участника.",
+    "kick_success": "✅ **{member}** был кикнут.\nПричина: {reason}",
+    "kick_error": "❌ Не удалось кикнуть: {error}",
+
+    "mute_self": "❌ Нельзя замутить самого себя!",
+    "mute_no_perms": "❌ У тебя недостаточно прав.",
+    "mute_success": "🔇 **{member}** получил таймаут на **{minutes}** минут.\nПричина: {reason}",
+    "mute_error": "❌ Не удалось выдать мут: {error}",
+
+    "unmute_success": "✅ С {member} снят таймаут.",
+    "unmute_error": "❌ Ошибка: {error}"
+  },
+
+    "pinterest": {
+    "searching": "🔍 Ищу новые пины **@{username}**...",
+    "no_pins_found": "❌ Пины пользователя **@{username}** не найдены.",
+    "all_pins_shown": "❌ Все доступные пины уже были показаны.",
+    "embed_title": "📌 Pinterest",
+    "footer": "Запросил: {requester} • Сегодня, в {time_str}",
+    "error": "❌ Ошибка при получении пинов."
+  },
+
+    "reload": {
+    "access_denied": "❌ Доступ запрещён.",
+    "no_module_specified": "❌ Укажи модуль(и) или `all`",
+    
+    "reloading_all": "🔄 **Перезагружаю все модули...**",
+    "restarting": "🔄 **Перезапускаю бота...**",
+
+    "reload_success": "✅ **Перезагружен**: `{module}`",
+    "load_success": "✅ **Загружен**: `{module}`",
+    "unload_success": "✅ **Выгружен**: `{module}`",
+
+    "module_not_loaded": "⚠️ Модуль `{module}` не был загружен.",
+    "module_not_found": "❌ Модуль `{module}` не найден.",
+    "command_conflict": "⚠️ **Конфликт команд** в `{module}`",
+    "load_error": "❌ Не удалось загрузить `{module}`",
+    "reload_error": "❌ Ошибка с `{module}`",
+    "unload_error": "❌ Ошибка выгрузки",
+
+    "full_reload_title": "♻️ Полная перезагрузка завершена",
+    "full_reload_success": "✅ Успешно",
+    "full_reload_errors": "❌ Ошибок",
+
+    "owner_id_missing": "⚠️ OWNER_ID не указан в .env!"
+  },
+
+    "structure": {
+    "embed_title": "📁 Структура проекта Mafanya 3.0",
+    "footer": "Запросил: {author}"
+  },
+
+    "vkphoto": {
+    "token_missing": "❌ VK_TOKEN не найден в .env",
+    "vk_connected": "✅ VK API подключён | {name} (id: {id})",
+    "vk_connection_error": "❌ Ошибка подключения VK: {error}",
+    
+    "api_not_connected": "❌ VK API не подключён. Проверь токен.",
+    "no_photo": "❌ Не удалось получить фото.\nУбедись, что у тебя есть фото в **«Сохранённых»** или **Избранном**.",
+    
+    "embed_footer": "Запросил: {author}"
+  },
+
+    "voice_ai": {
+    "not_in_voice": "❌ Ты должен быть в голосовом канале!",
+    "join_success": "✅ **Мафаня зашла в войс** — `{channel}`",
+    "join_greeting": "Приветики! Я теперь с вами",
+    "join_error": "❌ Не получилось зайти: {error}",
+
+    "leave_success": "👋 **Мафаня вышла из войса**",
+    "not_in_voice_leave": "Я и так не в войсе.",
+
+    "tts_error": "❌ Не получилось сказать...",
+
+    "silero_loading": "🔥 Silero TTS загружается на: {device}",
+    "silero_loaded": "✅ Silero TTS успешно загружен! (очень живой голос)",
+
+    "ai_fallback": [
+      "Ммм?",
+      "Да?",
+      "Слушаю тебя",
+      "Что такое?"
+    ]
+  },
+
+    "voice_stt": {
+    "not_in_voice": "❌ Ты должен быть в голосовом канале!",
+    "need_join_first": "❌ Сначала `!join_voice`",
+    "listen_started": "🎙️ **Мафаня слушает голос!** Говори в микрофон.\nЗапись: `!запиши 8` (секунд)",
+    "listen_stopped": "👋 Режим прослушки выключен.",
+
+    "listen_not_enabled": "Сначала включи: `!listen`",
+    "user_not_in_voice": "❌ Ты не в войсе!",
+    "bot_not_in_voice": "❌ Бот не в голосовом канале!",
+
+    "recording": "🎤 Записываю **{duration} секунд**... Говори сейчас!",
+    "recording_success": "✅ Запись сохранена. Обрабатываю...",
+    "recording_empty": "😔 Ничего не записалось. Говори громче или ближе к микрофону.",
+    "recording_error": "❌ Ошибка записи: {error}",
+
+    "cog_loaded": "✅ VoiceSTT загружен (с voice-recv)"
+  },
+
+    "audio": {
+    "no_url": "❌ Укажи ссылку!",
+    "not_in_voice": "❌ Зайди в голосовой канал!",
+    "searching": "🔍 **Ищу трек...**",
+    "added_to_queue": "✅ Добавлено: **{title}**",
+    "play_error": "❌ Ошибка: {error}",
+
+    "skip": "⏭ **Пропущено**",
+    "pause": "⏸ **Пауза**",
+    "resume": "▶️ **Продолжаю**",
+    "leave": "👋 **Отключился**",
+
+    "now_playing": "▶️ Сейчас играет",
+    "requester": "Запросил",
+    "duration": "Длительность",
+    "in_queue": "В очереди"
+  },
+
+    "audio_files": {
+    "not_in_voice": "❌ Зайди в голосовой канал!",
+    "audio_cog_missing": "❌ Основной модуль музыки не загружен.",
+    "file_added": "✅ Добавлен файл: **{title}**",
+    "play_error": "❌ Ошибка при воспроизведении файла: {error}"
+  },
+
+    "module_descriptions": {
+    "basic": "Основные команды: ping, hello, about, clear, userinfo и т.д.",
+    "gemini": "Интеграция с Gemini AI — умные ответы, генерация текста.",
+    "helpimage": "Красивое меню команд с картинкой.",
+    "customrole": "Создание и управление личными ролями пользователей.",
+    "moderation": "Модерация: бан, кик, мут, размут и т.д.",
+    "forza": "Интеграция с Forza Horizon — статус, дашборд, UDP.",
+    "fun": "Развлекательные команды: мем, 8ball и другие.",
+    "pinterest": "Поиск и отправка рандомных картинок с Pinterest.",
+    "vkphoto": "Рандомные фото из ВКонтакте.",
+    "reload": "Перезагрузка модулей, рестарт бота и т.д.",
+    "structure": "Показывает структуру проекта.",
+    "voice_ai": "Голосовой AI (TTS) — бот заходит в войс и говорит.",
+    "voice_stt": "Распознавание речи (STT) — бот слушает голосовые сообщения.",
+    "audio": "Музыкальный плеер: play, skip, pause, queue и т.д.",
+    "audio_files": "Поддержка воспроизведения аудиофайлов из сообщений."
+  },
+
+  "music_cover": {
+    "backgrounds_not_found": "⚠️ Папка backgrounds не найдена",
+    "no_backgrounds": "⚠️ В папке backgrounds нет изображений",
+    "font_not_found": "⚠️ Шрифт Blackentina4F.ttf не найден, используется стандартный",
+    "avatar_error": "[Cover] Ошибка аватарки: {error}"
+  },
+
+  "aliases": {
+    "save_success": "✅ Алиасы успешно сохранены и применены",
+    "save_error": "❌ Ошибка сохранения: {error}"
+  }
+}
